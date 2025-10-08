@@ -8,12 +8,10 @@ import (
 )
 
 func New(e *echo.Echo, auth *authenticator.Authenticator) *echo.Echo {
+	api := e.Group("/api")
 
-	e.GET("/health", func(c echo.Context) error {
-		return c.String(200, "ok")
-	})
-	e.GET("/login", http.LoginHandler(auth))
-	e.GET("/callback", http.CallbackHandler(auth))
-	e.GET("/profile", http.ProfileHandler)
+	api.GET("/login", http.LoginHandler(auth))
+	api.GET("/callback", http.CallbackHandler(auth))
+	api.GET("/profile", http.ProfileHandler)
 	return e
 }

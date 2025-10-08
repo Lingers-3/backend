@@ -3,6 +3,7 @@ package http
 import (
 	"crypto/rand"
 	"encoding/base64"
+	"log"
 	"net/http"
 	"pocketeer/internal/platform/authenticator"
 
@@ -16,17 +17,20 @@ func LoginHandler(auth *authenticator.Authenticator) echo.HandlerFunc {
 
 		state, err := generateRandomState()
 		if err != nil {
-			return c.String(http.StatusInternalServerError, err.Error())
+			log.Printf("failed to generate state: %v", err)
+			return c.String(http.StatusInternalServerError, "internal error")
 		}
 		verifier, err := generateCodeVerifier()
 		if err != nil {
-			return c.String(http.StatusInternalServerError, err.Error())
+			log.Printf("failed to generate code verifier: %v", err)
+			return c.String(http.StatusInternalServerError, "internal error")
 		}
 
 		sess.Values["state"] = state
 		sess.Values["code_verifier"] = verifier
 		if err := sess.Save(c.Request(), c.Response()); err != nil {
-			return c.String(http.StatusInternalServerError, err.Error())
+			log.Printf("failed to save session: %v", err)
+			return c.String(http.StatusInternalServerError, "internal error")
 		}
 
 		return c.Redirect(http.StatusTemporaryRedirect, auth.AuthCodeURLWithPKCE(state, verifier))
@@ -40,7 +44,7 @@ func generateRandomState() (string, error) {
 		return "", err
 	}
 
-	state := base64.StdEncoding.EncodeToString(b)
+	state := base64.RawURLEncoding.EncodeToString(b)
 
 	return state, nil
 }
