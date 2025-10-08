@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"net/http"
 	"pocketeer/internal/platform/authenticator"
 
@@ -43,8 +42,6 @@ func CallbackHandler(auth *authenticator.Authenticator) echo.HandlerFunc {
 		if err := sess.Save(c.Request(), c.Response()); err != nil {
 			return c.JSON(http.StatusInternalServerError, err.Error())
 		}
-
-		fmt.Printf("session saved: %+v\n", sess.Values["refresh_token"])
 
 		return c.Redirect(http.StatusTemporaryRedirect, "/api/users/me")
 	}
