@@ -24,7 +24,7 @@ func main() {
 
 	cfg := config.Load()
 
-	auth, err := authenticator.New(cfg.Auth0ClientID, cfg.Auth0ClientSecret, cfg.Auth0CallbackURL)
+	auth, err := authenticator.New(cfg.Auth0Domain, cfg.Auth0ClientID, cfg.Auth0ClientSecret, cfg.Auth0CallbackURL)
 	if err != nil {
 		log.Fatalf("Failed to initialize the authenticator: %v", err)
 	}
@@ -32,7 +32,7 @@ func main() {
 	e := echo.New()
 	e.Use(session.Middleware(sessions.NewCookieStore([]byte("our-secret-key"))))
 
-	router.New(e, auth)
+	router.New(e, auth, cfg)
 
 	log.Printf("Server listening on http://localhost:%s/", cfg.AppPort)
 	e.Logger.Fatal(e.Start(":" + cfg.AppPort))

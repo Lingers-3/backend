@@ -5,9 +5,10 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"errors"
-	"os"
+	"time"
 
 	"github.com/coreos/go-oidc/v3/oidc"
+	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/oauth2"
 )
 
@@ -16,10 +17,10 @@ type Authenticator struct {
 	oauth2.Config
 }
 
-func New(clientId string, clientSecret string, redirectUrl string) (*Authenticator, error) {
+func New(domain string, clientId string, clientSecret string, redirectUrl string) (*Authenticator, error) {
 	provider, err := oidc.NewProvider(
 		context.Background(),
-		"https://"+os.Getenv("AUTH0_DOMAIN")+"/",
+		"https://"+domain+"/",
 	)
 	if err != nil {
 		return nil, err
@@ -30,7 +31,7 @@ func New(clientId string, clientSecret string, redirectUrl string) (*Authenticat
 		ClientSecret: clientSecret,
 		RedirectURL:  redirectUrl,
 		Endpoint:     provider.Endpoint(),
-		Scopes:       []string{oidc.ScopeOpenID, "profile"},
+		Scopes:       []string{oidc.ScopeOpenID, "profile", "offline_access"},
 	}
 
 	return &Authenticator{
@@ -65,6 +66,39 @@ func (a *Authenticator) ExchangeWithPKCE(ctx context.Context, code string, codeV
 	return a.Config.Exchange(ctx, code,
 		oauth2.SetAuthURLParam("code_verifier", codeVerifier),
 	)
+}
+
+func (a *Authenticator) RefreshAccessToken(ctx context.Context, refreshToken string) (*oauth2.Token, error) {
+	token := &oauth2.Token{
+		RefreshToken: refreshToken,
+	}
+	ts := a.Config.TokenSource(ctx, token)
+
+	newToken, err := ts.Token()
+	if err != nil {
+		return nil, err
+	}
+
+	return newToken, nil
+}
+
+func (a *Authenticator) IsExpired(accessToken string) bool {
+	token, _, err := new(jwt.Parser).ParseUnverified(accessToken, jwt.MapClaims{})
+	if err != nil {
+		return true
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return true
+	}
+
+	exp, ok := claims["exp"].(float64)
+	if !ok {
+		return true
+	}
+
+	return time.Unix(int64(exp), 0).Before(time.Now())
 }
 
 func generateCodeChallenge(verifier string) string {

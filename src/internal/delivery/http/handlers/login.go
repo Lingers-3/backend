@@ -1,4 +1,4 @@
-package http
+package handlers
 
 import (
 	"crypto/rand"
@@ -18,19 +18,19 @@ func LoginHandler(auth *authenticator.Authenticator) echo.HandlerFunc {
 		state, err := generateRandomState()
 		if err != nil {
 			log.Printf("failed to generate state: %v", err)
-			return c.String(http.StatusInternalServerError, "internal error")
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "internal error"})
 		}
 		verifier, err := generateCodeVerifier()
 		if err != nil {
 			log.Printf("failed to generate code verifier: %v", err)
-			return c.String(http.StatusInternalServerError, "internal error")
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "internal error"})
 		}
 
 		sess.Values["state"] = state
 		sess.Values["code_verifier"] = verifier
 		if err := sess.Save(c.Request(), c.Response()); err != nil {
 			log.Printf("failed to save session: %v", err)
-			return c.String(http.StatusInternalServerError, "internal error")
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "internal error"})
 		}
 
 		return c.Redirect(http.StatusTemporaryRedirect, auth.AuthCodeURLWithPKCE(state, verifier))

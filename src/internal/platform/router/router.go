@@ -1,17 +1,24 @@
 package router
 
 import (
-	"pocketeer/internal/delivery/http"
+	"pocketeer/internal/config"
+	"pocketeer/internal/delivery/http/handlers"
+	"pocketeer/internal/delivery/http/middleware"
 	"pocketeer/internal/platform/authenticator"
 
 	"github.com/labstack/echo/v4"
 )
 
-func New(e *echo.Echo, auth *authenticator.Authenticator) *echo.Echo {
+func New(e *echo.Echo, authenticator *authenticator.Authenticator, cfg *config.Config) *echo.Echo {
 	api := e.Group("/api")
 
-	api.GET("/login", http.LoginHandler(auth))
-	api.GET("/callback", http.CallbackHandler(auth))
-	api.GET("/profile", http.ProfileHandler)
+	auth := api.Group("/auth")
+	auth.GET("/login", handlers.LoginHandler(authenticator))
+	auth.GET("/callback", handlers.CallbackHandler(authenticator))
+	auth.GET("/logout", handlers.LogoutHandler(cfg))
+
+	users := api.Group("/users")
+	users.GET("/me", handlers.ProfileHandler, middleware.AuthMiddleware(authenticator))
+
 	return e
 }

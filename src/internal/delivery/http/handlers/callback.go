@@ -1,6 +1,7 @@
-package http
+package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"pocketeer/internal/platform/authenticator"
 
@@ -13,35 +14,38 @@ func CallbackHandler(auth *authenticator.Authenticator) echo.HandlerFunc {
 		sess, _ := session.Get("session", c)
 
 		if c.QueryParam("state") != sess.Values["state"] {
-			return c.String(http.StatusBadRequest, "Invalid state parameter.")
+			return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid state parameter."})
 		}
 
 		verifier, ok := sess.Values["code_verifier"].(string)
 		if !ok {
-			return c.String(http.StatusBadRequest, "Code verifier not found in session.")
+			return c.JSON(http.StatusBadRequest, map[string]string{"error": "code verifier not found in session."})
 		}
 
 		token, err := auth.ExchangeWithPKCE(c.Request().Context(), c.QueryParam("code"), verifier)
 		if err != nil {
-			return c.String(http.StatusUnauthorized, "Failed to exchange an authorization code for a token.")
+			return c.JSON(http.StatusUnauthorized, map[string]string{"error": "failed to exchange an authorization code for a token."})
 		}
 
 		idToken, err := auth.VerifyIDToken(c.Request().Context(), token)
 		if err != nil {
-			return c.String(http.StatusInternalServerError, "Failed to verify ID Token.")
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to verify ID Token."})
 		}
 
 		var profile map[string]interface{}
 		if err := idToken.Claims(&profile); err != nil {
-			return c.String(http.StatusInternalServerError, err.Error())
+			return c.JSON(http.StatusInternalServerError, err.Error())
 		}
 
 		sess.Values["access_token"] = token.AccessToken
+		sess.Values["refresh_token"] = token.RefreshToken
 		sess.Values["profile"] = profile
 		if err := sess.Save(c.Request(), c.Response()); err != nil {
-			return c.String(http.StatusInternalServerError, err.Error())
+			return c.JSON(http.StatusInternalServerError, err.Error())
 		}
 
-		return c.Redirect(http.StatusTemporaryRedirect, "/profile")
+		fmt.Printf("session saved: %+v\n", sess.Values["refresh_token"])
+
+		return c.Redirect(http.StatusTemporaryRedirect, "/api/users/me")
 	}
 }
