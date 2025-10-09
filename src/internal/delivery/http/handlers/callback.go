@@ -33,12 +33,18 @@ func CallbackHandler(auth *authenticator.Authenticator) echo.HandlerFunc {
 
 		var profile map[string]interface{}
 		if err := idToken.Claims(&profile); err != nil {
-			return c.JSON(http.StatusInternalServerError, err.Error())
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to parse ID token."})
+		}
+
+		emailVerified, _ := profile["email_verified"].(bool)
+		if !emailVerified {
+			return c.JSON(http.StatusForbidden, map[string]string{"error": "Email unverified."})
 		}
 
 		sess.Values["access_token"] = token.AccessToken
 		sess.Values["refresh_token"] = token.RefreshToken
 		sess.Values["profile"] = profile
+		sess.Values["email_verified"] = emailVerified
 		if err := sess.Save(c.Request(), c.Response()); err != nil {
 			return c.JSON(http.StatusInternalServerError, err.Error())
 		}
