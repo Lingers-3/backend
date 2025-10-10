@@ -1,0 +1,12 @@
+.git
+.gitignore
+README.md
+LICENSE
+Dockerfile
+.dockerignore
+
+*server
+*main
+
+.env
+*.env
