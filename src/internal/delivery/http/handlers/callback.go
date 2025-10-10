@@ -41,10 +41,16 @@ func CallbackHandler(auth *authenticator.Authenticator) echo.HandlerFunc {
 			return c.JSON(http.StatusForbidden, map[string]string{"error": "Email unverified."})
 		}
 
+		sub, ok := profile["sub"].(string)
+		if !ok {
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "invalid sub claim"})
+		}
+
 		sess.Values["access_token"] = token.AccessToken
 		sess.Values["refresh_token"] = token.RefreshToken
 		sess.Values["profile"] = profile
 		sess.Values["email_verified"] = emailVerified
+		sess.Values["sub"] = sub
 		if err := sess.Save(c.Request(), c.Response()); err != nil {
 			return c.JSON(http.StatusInternalServerError, err.Error())
 		}

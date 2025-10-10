@@ -31,7 +31,7 @@ func New(domain string, clientId string, clientSecret string, redirectUrl string
 		ClientSecret: clientSecret,
 		RedirectURL:  redirectUrl,
 		Endpoint:     provider.Endpoint(),
-		Scopes:       []string{oidc.ScopeOpenID, "profile", "offline_access"},
+		Scopes:       []string{oidc.ScopeOpenID, "profile", "email", "offline_access"},
 	}
 
 	return &Authenticator{
