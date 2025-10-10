@@ -16,6 +16,7 @@ func New(e *echo.Echo, authenticator *authenticator.Authenticator, cfg *config.C
 	auth.GET("/login", handlers.LoginHandler(authenticator))
 	auth.GET("/callback", handlers.CallbackHandler(authenticator))
 	auth.GET("/logout", handlers.LogoutHandler(cfg))
+	auth.POST("/change-password", handlers.UpdatePasswordHandler(cfg))
 
 	users := api.Group("/users")
 	users.GET("/me", handlers.ProfileHandler, middleware.AuthMiddleware(authenticator))
