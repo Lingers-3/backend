@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm"
 
 	"pocketeer/internal/config"
+	"pocketeer/internal/platform/db/models"
 )
 
 type DB = gorm.DB;
@@ -39,6 +40,14 @@ func Init(cfg *config.Config) *DB {
 	sqlDB.SetMaxIdleConns(10)
 	sqlDB.SetMaxOpenConns(100)
 	sqlDB.SetConnMaxLifetime(time.Hour)
+
+	// NOTE(pencelheimer/gemini): consider dedicated migration tools (Goose, Migrate)
+	err = db.AutoMigrate(
+		&models.User{},
+	)
+	if err != nil {
+		log.Fatalf("failed to run migrations: %v", err)
+	}
 
 	log.Println("Database connection successfully initialized and migrated.")
 
