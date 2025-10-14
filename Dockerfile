@@ -14,6 +14,7 @@ COPY src/. .
 
 # critical for static linking
 ENV CGO_ENABLED=0
+RUN go generate ./... 
 RUN go build -ldflags="-s -w" -o /app/server ./cmd/server 
 
 # RUNTIME stage
