@@ -1,0 +1,46 @@
+package db
+
+import (
+	"fmt"
+	"log"
+	"time"
+
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+
+	"pocketeer/internal/config"
+)
+
+type DB = gorm.DB;
+
+func Init(cfg *config.Config) *DB {
+	dsn := fmt.Sprintf(
+		"host=%s user=%s password=%s dbname=%s port=%s sslmode=%s TimeZone=%s",
+		cfg.DbHost,
+		cfg.DbUser,
+		cfg.DbPassword,
+		cfg.DbName,
+		cfg.DbPort,
+		cfg.DbSSLMode,
+		"Europe/Kyiv",
+	)
+
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		log.Fatalf("failed to connect database: %v", err)
+	}
+
+	// set underlying connection pool settings
+	sqlDB, err := db.DB()
+	if err != nil {
+		log.Fatalf("failed to get underlying sql.DB: %v", err)
+	}
+	// TODO(pencelheimer): change it to something meaningful?
+	sqlDB.SetMaxIdleConns(10)
+	sqlDB.SetMaxOpenConns(100)
+	sqlDB.SetConnMaxLifetime(time.Hour)
+
+	log.Println("Database connection successfully initialized and migrated.")
+
+	return db
+}
