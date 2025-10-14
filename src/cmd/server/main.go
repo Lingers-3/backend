@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/gob"
+	"fmt"
 	"log"
 	"pocketeer/internal/config"
 	"pocketeer/internal/platform/authenticator"
@@ -26,7 +27,7 @@ func main() {
 
 	cfg := config.Load()
 
-	// TODO(pencelheimer): make db.Init return an error, or make authenticator.New panic
+	// TODO(pencelheimer): make db.Init retry few times and return an error
 	db := db.Init(cfg)
 
 	auth, err := authenticator.New(cfg.Auth0Domain, cfg.Auth0ClientID, cfg.Auth0ClientSecret, cfg.Auth0CallbackURL)
@@ -35,11 +36,11 @@ func main() {
 	}
 
 	e := echo.New()
-	e.Use(session.Middleware(sessions.NewCookieStore([]byte("our-secret-key")))) // HACK(pencelheimer): add a secret definition via config?
+	e.Use(session.Middleware(sessions.NewCookieStore([]byte(cfg.SessionSecret))))
 
 	router.New(e, auth, db, cfg)
 
-	// HACK(pencelheimer): add an interface/address definition via config?
-	log.Printf("Server listening on http://localhost:%s/", cfg.AppPort)
-	e.Logger.Fatal(e.Start(":" + cfg.AppPort))
+	socket := fmt.Sprintf("%s:%s", cfg.AppAddress, cfg.AppPort)
+	log.Printf("Server listening on http://%s/", socket)
+	e.Logger.Fatal(e.Start(socket))
 }

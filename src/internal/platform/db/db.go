@@ -23,7 +23,7 @@ func Init(cfg *config.Config) *DB {
 		cfg.DbName,
 		cfg.DbPort,
 		cfg.DbSSLMode,
-		"Europe/Kyiv",
+		"UTC",
 	)
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
@@ -31,12 +31,11 @@ func Init(cfg *config.Config) *DB {
 		log.Fatalf("failed to connect database: %v", err)
 	}
 
-	// set underlying connection pool settings
+	// Set underlying connection pool settings
 	sqlDB, err := db.DB()
 	if err != nil {
 		log.Fatalf("failed to get underlying sql.DB: %v", err)
 	}
-	// TODO(pencelheimer): change it to something meaningful?
 	sqlDB.SetMaxIdleConns(10)
 	sqlDB.SetMaxOpenConns(100)
 	sqlDB.SetConnMaxLifetime(time.Hour)
