@@ -27,8 +27,10 @@ func main() {
 
 	cfg := config.Load()
 
-	// TODO(pencelheimer): make db.Init retry few times and return an error
-	db := db.Init(cfg)
+	db, err := db.Init(cfg)
+	if err != nil {
+		log.Fatalf("Failed to initialize the database connection: %v", err)
+	}
 
 	auth, err := authenticator.New(cfg.Auth0Domain, cfg.Auth0ClientID, cfg.Auth0ClientSecret, cfg.Auth0CallbackURL)
 	if err != nil {

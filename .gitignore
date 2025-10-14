@@ -1,5 +1,5 @@
 .env
 *.env
 
-*server
-*main
+src/server
+src/main
