@@ -32,6 +32,23 @@ func main() {
 		log.Fatalf("Failed to initialize the database connection: %v", err)
 	}
 
+	// Close the database on program exit
+	defer func() {
+		sqlDB, err := db.DB()
+		if err != nil {
+			log.Printf("Failed to get a database object: %v", err)
+			return
+		}
+
+		err = sqlDB.Close()
+		if err != nil {
+			log.Printf("Failed to close the database: %v", err)
+			return
+		}
+
+		log.Println("Database closed successfully")
+	}()
+
 	auth, err := authenticator.New(cfg.Auth0Domain, cfg.Auth0ClientID, cfg.Auth0ClientSecret, cfg.Auth0CallbackURL)
 	if err != nil {
 		log.Fatalf("Failed to initialize the authenticator: %v", err)
