@@ -1,6 +1,6 @@
 package config
 
-//go:generate bash -c "awk -f gen_load.awk $GOFILE | gofmt > load.go"
+//go:generate sh -c "awk -f gen_load.awk $GOFILE | gofmt > load.go"
 type Config struct {
 	AppAddress string
 	AppPort    string

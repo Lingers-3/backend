@@ -26,7 +26,7 @@ func Init(cfg *config.Config) (db *DB, err error) {
 		"UTC",
 	)
 
-	sleep := time.Duration(0.5 * float64(time.Second))
+	sleep := time.Duration(500 * time.Millisecond)
 	attempts := 5
 	for i := range attempts {
 		log.Println("Establishing connection to the DB. Attempt ", i+1)
