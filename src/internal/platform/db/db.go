@@ -30,7 +30,10 @@ func Init(cfg *config.Config) (db *DB, err error) {
 	attempts := 5
 	for i := range attempts {
 		log.Println("Establishing connection to the DB. Attempt ", i+1)
-		db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+		db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
+			// TODO(noatu): https://gorm.io/docs/gorm_config.html#NamingStrategy
+			// TODO(noatu): https://gorm.io/docs/logger.html
+		})
 		if err != nil {
 			log.Printf("Error connecting to the DB: %s. Sleeping for: %s", err, sleep)
 			time.Sleep(sleep)
@@ -55,6 +58,8 @@ func Init(cfg *config.Config) (db *DB, err error) {
 	// NOTE(pencelheimer/gemini): consider dedicated migration tools (Goose, Migrate)
 	err = db.AutoMigrate(
 		&models.User{},
+		&models.Picture{},
+		&models.ItemType{},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to run migrations: %v", err)

@@ -55,6 +55,6 @@ func CallbackHandler(auth *authenticator.Authenticator) echo.HandlerFunc {
 			return c.JSON(http.StatusInternalServerError, err.Error())
 		}
 
-		return c.Redirect(http.StatusTemporaryRedirect, "/api/users/me")
+		return c.Redirect(http.StatusTemporaryRedirect, "/api/users/me") // TODO(noatu): change to front-end/inventory
 	}
 }
