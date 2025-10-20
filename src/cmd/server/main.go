@@ -6,7 +6,7 @@ import (
 	"log"
 	"pocketeer/internal/config"
 	"pocketeer/internal/platform/authenticator"
-	"pocketeer/internal/platform/db"
+	"pocketeer/internal/platform/database"
 	"pocketeer/internal/platform/router"
 
 	"github.com/gorilla/sessions"
@@ -27,26 +27,20 @@ func main() {
 
 	cfg := config.Load()
 
-	db, err := db.Init(cfg)
+	db, err := database.Init(cfg)
 	if err != nil {
 		log.Fatalf("Failed to initialize the database connection: %v", err)
 	}
 
 	// Close the database on program exit
 	defer func() {
-		sqlDB, err := db.DB()
-		if err != nil {
-			log.Printf("Failed to get a database object: %v", err)
+		// TODO(noatu): our code organization, errors and logging are 🍑
+		log.Println("INFO: closing the database")
+		if err := database.Close(db); err != nil {
+			log.Printf("ERROR: %v", err)
 			return
 		}
-
-		err = sqlDB.Close()
-		if err != nil {
-			log.Printf("Failed to close the database: %v", err)
-			return
-		}
-
-		log.Println("Database closed successfully")
+		log.Println("INFO: database closed")
 	}()
 
 	auth, err := authenticator.New(cfg.Auth0Domain, cfg.Auth0ClientID, cfg.Auth0ClientSecret, cfg.Auth0CallbackURL)
@@ -57,6 +51,8 @@ func main() {
 	e := echo.New()
 	e.Use(session.Middleware(sessions.NewCookieStore([]byte(cfg.SessionSecret))))
 
+	// TODO(noatu): this may as well be inlined
+	// but it would be even better to move the echo (and auth) stuff in the router
 	router.New(e, auth, db, cfg)
 
 	socket := fmt.Sprintf("%s:%s", cfg.AppAddress, cfg.AppPort)

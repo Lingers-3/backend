@@ -5,12 +5,12 @@ import (
 	"pocketeer/internal/delivery/http/handlers"
 	"pocketeer/internal/delivery/http/middleware"
 	"pocketeer/internal/platform/authenticator"
-	"pocketeer/internal/platform/db"
+	"pocketeer/internal/platform/database"
 
 	"github.com/labstack/echo/v4"
 )
 
-func New(e *echo.Echo, authenticator *authenticator.Authenticator, db *db.DB, cfg *config.Config) *echo.Echo {
+func New(e *echo.Echo, authenticator *authenticator.Authenticator, db *database.DB, cfg *config.Config) *echo.Echo {
 	api := e.Group("/api")
 
 	auth := api.Group("/auth")

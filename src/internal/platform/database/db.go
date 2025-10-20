@@ -1,4 +1,4 @@
-package db
+package database
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ import (
 	"gorm.io/gorm"
 
 	"pocketeer/internal/config"
-	"pocketeer/internal/platform/db/models"
+	"pocketeer/internal/platform/database/models"
 )
 
 type DB = gorm.DB
@@ -68,4 +68,18 @@ func Init(cfg *config.Config) (db *DB, err error) {
 	log.Println("Database connection successfully initialized and migrated.")
 
 	return db, nil
+}
+
+func Close(db *DB) error {
+	sqlDB, err := db.DB()
+	if err != nil {
+		return fmt.Errorf("getting database handle: %v", err)
+	}
+
+	err = sqlDB.Close()
+	if err != nil {
+		return fmt.Errorf("closing the database: %v", err)
+	}
+
+	return nil
 }
