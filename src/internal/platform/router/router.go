@@ -15,7 +15,7 @@ func New(e *echo.Echo, authenticator *authenticator.Authenticator, db *database.
 
 	auth := api.Group("/auth")
 	auth.GET("/login", handlers.LoginHandler(authenticator))
-	auth.GET("/callback", handlers.CallbackHandler(authenticator))
+	auth.GET("/callback", handlers.CallbackHandler(authenticator, db))
 	auth.GET("/logout", handlers.LogoutHandler(cfg))
 	auth.POST("/change-password", handlers.UpdatePasswordHandler(cfg))
 

@@ -33,15 +33,15 @@ func UpdatePasswordHandler(cfg *config.Config) echo.HandlerFunc {
 		}
 
 		sess, _ := session.Get("session", c)
-		sub, ok := sess.Values["sub"].(string)
-		if !ok || sub == "" {
-			log.Printf("Sub not found in session")
+		auth0ID, ok := sess.Values["auth0_id"].(string)
+		if !ok || auth0ID == "" {
+			log.Printf("auth0ID not found in session")
 			return c.JSON(http.StatusUnauthorized, map[string]string{
 				"error": "unauthorized: invalid session",
 			})
 		}
 
-		url := fmt.Sprintf("https://%s/api/v2/users/%s", cfg.Auth0Domain, sub)
+		url := fmt.Sprintf("https://%s/api/v2/users/%s", cfg.Auth0Domain, auth0ID)
 		payload := map[string]string{
 			"password":   pwd.NewPassword,
 			"connection": "Username-Password-Authentication",
