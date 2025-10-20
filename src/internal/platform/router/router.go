@@ -22,5 +22,8 @@ func New(e *echo.Echo, authenticator *authenticator.Authenticator, db *database.
 	users := api.Group("/users")
 	users.GET("/me", handlers.ProfileHandler, middleware.AuthMiddleware(authenticator))
 
+	item_types := api.Group("/item-types")
+	item_types.POST("/create", handlers.CreateItemTypeHandler, middleware.AuthMiddleware(authenticator))
+
 	return e
 }

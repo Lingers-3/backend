@@ -24,9 +24,10 @@ type ItemType struct {
 	//    Store Picture, and PictureID will reference Picture.ID
 	// 2. Has One: https://gorm.io/docs/has_one.html
 	//    Store Picture, and Picture.ItemTypeID will reference ID
-	// Using variant 1 as Picture is not ItemType specific:
-	PictureID uint    // QUESTION(noatu): should it be unique?
-	Picture   Picture `gorm:"constraint:OnDelete:CASCADE;"`
+	// "Has One" would make Picture ItemType specific, so using "Belongs To"
+	// HACK(noatu): using `*` as Picture is optional (not sure if it will work)
+	PictureID *uint
+	Picture   *Picture `gorm:"constraint:OnDelete:CASCADE;"`
 }
 
 func (ItemType) TableName() string {
