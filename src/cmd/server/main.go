@@ -58,10 +58,7 @@ func main() {
 	e := echo.New()
 
 	// TODO(pencelheimer): move it to the separate function?
-	allowedOrigins := []string{"https://pocketeer.linerds.us"}
-	if cfg.AppEnv == "development" {
-		allowedOrigins = append(allowedOrigins, "http://localhost:5173")
-	}
+	allowedOrigins := []string{"https://pocketeer.linerds.us", "http://localhost:5173"}
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins:     allowedOrigins,
 		AllowMethods:     []string{echo.GET, echo.PUT, echo.POST, echo.DELETE, echo.OPTIONS},
