@@ -4,6 +4,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	"log"
+	"net/http"
 	"pocketeer/internal/config"
 	"pocketeer/internal/platform/authenticator"
 	"pocketeer/internal/platform/db"
@@ -61,15 +62,19 @@ func main() {
 	allowedOrigins := []string{"https://pocketeer.linerds.us", "http://localhost:5173"}
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins:     allowedOrigins,
-		AllowMethods:     []string{echo.GET, echo.PUT, echo.POST, echo.DELETE, echo.OPTIONS},
+		AllowMethods:     []string{
+			http.MethodGet,
+			http.MethodHead,
+			http.MethodPut,
+			http.MethodPatch,
+			http.MethodPost,
+			http.MethodDelete,
+		},
 		AllowCredentials: true,
 		AllowHeaders: []string{
-			"Access-Control-Allow-Headers",
-			"Access-Control-Allow-Origin",
-			"Content-Type",
-			"Content-Length",
-			"Accept-Encoding",
-			"Authorization",
+			echo.HeaderOrigin,
+			echo.HeaderContentType,
+			echo.HeaderAccept,
 		},
 	}))
 
