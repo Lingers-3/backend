@@ -59,10 +59,10 @@ func main() {
 	e := echo.New()
 
 	// TODO(pencelheimer): move it to the separate function?
-	allowedOrigins := []string{"https://pocketeer.linerds.us", "http://localhost:5173"}
+	allowedOrigins := []string{"https://pocketeer.linerds.us", "http://localhost:5173", "pocketeer-dev.vercel.app"}
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins:     allowedOrigins,
-		AllowMethods:     []string{
+		AllowOrigins: allowedOrigins,
+		AllowMethods: []string{
 			http.MethodGet,
 			http.MethodHead,
 			http.MethodPut,
