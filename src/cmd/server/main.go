@@ -13,6 +13,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 // HACK(pencelheimer): the fuck is this?
@@ -55,6 +56,26 @@ func main() {
 	}
 
 	e := echo.New()
+
+	// TODO(pencelheimer): move it to the separate function?
+	allowedOrigins := []string{"https://pocketeer.linerds.us"}
+	if cfg.AppEnv == "development" {
+		allowedOrigins = append(allowedOrigins, "http://localhost:5173")
+	}
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins:     allowedOrigins,
+		AllowMethods:     []string{echo.GET, echo.PUT, echo.POST, echo.DELETE, echo.OPTIONS},
+		AllowCredentials: true,
+		AllowHeaders: []string{
+			"Access-Control-Allow-Headers",
+			"Access-Control-Allow-Origin",
+			"Content-Type",
+			"Content-Length",
+			"Accept-Encoding",
+			"Authorization",
+		},
+	}))
+
 	e.Use(session.Middleware(sessions.NewCookieStore([]byte(cfg.SessionSecret))))
 
 	router.New(e, auth, db, cfg)
