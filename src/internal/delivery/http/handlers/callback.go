@@ -55,6 +55,11 @@ func CallbackHandler(auth *authenticator.Authenticator) echo.HandlerFunc {
 			return c.JSON(http.StatusInternalServerError, err.Error())
 		}
 
-		return c.Redirect(http.StatusTemporaryRedirect, "/api/users/me")
+		redirectUri, ok := sess.Values["redirect_uri"].(string)
+		if !ok || redirectUri == "" {
+			redirectUri = "https://pocketeer.linerds.us/"
+		}
+
+		return c.Redirect(http.StatusTemporaryRedirect, redirectUri)
 	}
 }

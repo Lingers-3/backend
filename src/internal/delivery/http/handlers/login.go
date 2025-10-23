@@ -15,6 +15,13 @@ func LoginHandler(auth *authenticator.Authenticator) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		sess, _ := session.Get("session", c)
 
+		redirectUri := c.QueryParam("redirect_uri")
+		if redirectUri != "" {
+			sess.Values["redirect_uri"] = redirectUri
+		} else {
+			sess.Values["redirect_uri"] = "https://pocketeer.linerds.us/"
+		}
+
 		state, err := generateRandomState()
 		if err != nil {
 			log.Printf("failed to generate state: %v", err)
