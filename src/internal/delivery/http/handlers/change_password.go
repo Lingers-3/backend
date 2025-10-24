@@ -8,23 +8,25 @@ import (
 	"log"
 	"net/http"
 	"pocketeer/internal/config"
+	"pocketeer/internal/delivery/http/middleware"
 
-	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 )
 
-type TokenResponse struct {
-	AccessToken string `json:"access_token"`
-	TokenType   string `json:"token_type"`
+type UpdatePasswordRequest struct {
+	NewPassword string `json:"new_password"`
 }
 
-type UpdatePwdRequest struct {
-	NewPassword string `json:"newPassword"`
-}
+// type UpdatePasswordResponse struct {
+// 	Error *string `json:"error"`
+// 	Message *string `json:"message"`
+// }
 
+// QUESTION(noatu): What's the point of returning meaningless messages?
+// Is http.Status* not enough?
 func UpdatePasswordHandler(cfg *config.Config) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		var pwd UpdatePwdRequest
+		var pwd UpdatePasswordRequest
 		if err := c.Bind(&pwd); err != nil {
 			log.Printf("Failed to parse request body: %v", err)
 			return c.JSON(http.StatusBadRequest, map[string]string{
@@ -32,13 +34,12 @@ func UpdatePasswordHandler(cfg *config.Config) echo.HandlerFunc {
 			})
 		}
 
-		sess, _ := session.Get("session", c)
-		auth0ID, ok := sess.Values["auth0_id"].(string)
-		if !ok || auth0ID == "" {
-			log.Printf("auth0ID not found in session")
-			return c.JSON(http.StatusUnauthorized, map[string]string{
-				"error": "unauthorized: invalid session",
-			})
+		// QUESTION(noatu): should authorization be checked before http request?
+		auth0ID, err := middleware.GetAuth0ID(c)
+		if err != nil {
+			// QUESTION(noatu): status code says it all?
+			// return c.NoContent(http.StatusUnauthorized)
+			return c.JSON(http.StatusUnauthorized, map[string]string{"error": err.Error()})
 		}
 
 		url := fmt.Sprintf("https://%s/api/v2/users/%s", cfg.Auth0Domain, auth0ID)
@@ -82,6 +83,13 @@ func UpdatePasswordHandler(cfg *config.Config) echo.HandlerFunc {
 			"message": "password updated successfully",
 		})
 	}
+}
+
+// QUESTION(noatu): This is OAuth, not public API per se,
+// why not inline it? TokenType field seems unneeded (but what do I know?).
+type TokenResponse struct {
+	AccessToken string `json:"access_token"`
+	TokenType   string `json:"token_type"`
 }
 
 func getManagementToken(domain, clientID, clientSecret string) (string, error) {

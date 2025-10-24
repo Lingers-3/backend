@@ -15,7 +15,6 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-// HACK(pencelheimer): the fuck is this?
 func init() {
 	gob.Register(map[string]any{})
 }

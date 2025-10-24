@@ -11,10 +11,11 @@ type ItemType struct {
 	Description         *string `gorm:"size:512"`
 	Category            *string `gorm:"size:256"`
 	BaseMeasurementUnit string  `gorm:"size:256"`
-	DefaultQuantity     float32 `gorm:"default:1"`
 	Width               *float32
 	Height              *float32
 	Depth               *float32
+	// HACK(noatu): using * for write as it is never null on read
+	DefaultQuantity *float32 `gorm:"default:1"`
 
 	// https://gorm.io/docs/has_many.html
 	UserID uint

@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"errors"
 	"net/http"
 	"pocketeer/internal/platform/authenticator"
 
@@ -39,4 +40,14 @@ func AuthMiddleware(auth *authenticator.Authenticator) echo.MiddlewareFunc {
 			return next(c)
 		}
 	}
+}
+
+// Gets auth0_id from context session
+func GetAuth0ID(c echo.Context) (string, error) {
+	sess, _ := session.Get("session", c)
+	auth0ID, ok := sess.Values["auth0_id"].(string)
+	if !ok || auth0ID == "" {
+		return "", errors.New("unauthorized: invalid session")
+	}
+	return auth0ID, nil
 }
