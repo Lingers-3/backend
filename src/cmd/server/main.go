@@ -4,6 +4,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	"log"
+	"net/http"
 	"pocketeer/internal/config"
 	"pocketeer/internal/platform/authenticator"
 	"pocketeer/internal/platform/db"
@@ -13,6 +14,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 // HACK(pencelheimer): the fuck is this?
@@ -55,6 +57,27 @@ func main() {
 	}
 
 	e := echo.New()
+
+	// TODO(pencelheimer): move it to the separate function?
+	allowedOrigins := []string{"https://pocketeer.linerds.us", "http://localhost:5173", "https://pocketeer-dev.vercel.app"}
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: allowedOrigins,
+		AllowMethods: []string{
+			http.MethodGet,
+			http.MethodHead,
+			http.MethodPut,
+			http.MethodPatch,
+			http.MethodPost,
+			http.MethodDelete,
+		},
+		AllowCredentials: true,
+		AllowHeaders: []string{
+			echo.HeaderOrigin,
+			echo.HeaderContentType,
+			echo.HeaderAccept,
+		},
+	}))
+
 	e.Use(session.Middleware(sessions.NewCookieStore([]byte(cfg.SessionSecret))))
 
 	router.New(e, auth, db, cfg)

@@ -87,6 +87,11 @@ func CallbackHandler(auth *authenticator.Authenticator, db *gorm.DB) echo.Handle
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to save session"})
 		}
 
-		return c.Redirect(http.StatusTemporaryRedirect, "/api/users/me")
+		redirectUri, ok := sess.Values["redirect_uri"].(string)
+		if !ok || redirectUri == "" {
+			redirectUri = "https://pocketeer.linerds.us/"
+		}
+
+		return c.Redirect(http.StatusTemporaryRedirect, redirectUri)
 	}
 }
