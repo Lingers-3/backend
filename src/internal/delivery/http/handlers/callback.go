@@ -77,6 +77,7 @@ func CallbackHandler(auth *authenticator.Authenticator, db *gorm.DB) echo.Handle
 			}
 		}
 
+		sess.Values["profile"] = profile
 		sess.Values["user_id"] = user.ID
 		sess.Values["auth0_id"] = user.Auth0ID
 		sess.Values["email"] = user.Email

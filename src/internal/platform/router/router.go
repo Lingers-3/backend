@@ -20,7 +20,8 @@ func New(e *echo.Echo, authenticator *authenticator.Authenticator, db *db.DB, cf
 	auth.POST("/change-password", handlers.UpdatePasswordHandler(cfg))
 
 	users := api.Group("/users")
-	users.GET("/me", handlers.ProfileHandler, middleware.AuthMiddleware(authenticator))
+	users.GET("/me", handlers.GetUserHandler, middleware.AuthMiddleware(authenticator))
+	users.DELETE("/me", handlers.DeleteUserHandler(cfg, db), middleware.AuthMiddleware(authenticator))
 
 	return e
 }
