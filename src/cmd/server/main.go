@@ -4,10 +4,14 @@ import (
 	"encoding/gob"
 	"fmt"
 	"log"
+
+	"pocketeer/internal/app/services"
 	"pocketeer/internal/config"
+	"pocketeer/internal/delivery/http/handlers"
+	"pocketeer/internal/delivery/http/middleware"
 	"pocketeer/internal/platform/authenticator"
 	"pocketeer/internal/platform/database"
-	"pocketeer/internal/platform/router"
+	"pocketeer/internal/platform/database/repositories"
 
 	"github.com/gorilla/sessions"
 	"github.com/joho/godotenv"
@@ -33,7 +37,6 @@ func main() {
 
 	// Close the database on program exit
 	defer func() {
-		// TODO(noatu): our code organization, errors and logging are 🍑
 		log.Println("INFO: closing the database")
 		if err := database.Close(db); err != nil {
 			log.Printf("ERROR: %v", err)
@@ -42,17 +45,35 @@ func main() {
 		log.Println("INFO: database closed")
 	}()
 
-	auth, err := authenticator.New(cfg.Auth0Domain, cfg.Auth0ClientID, cfg.Auth0ClientSecret, cfg.Auth0CallbackURL)
+	authenticator, err := authenticator.New(cfg.Auth0Domain, cfg.Auth0ClientID, cfg.Auth0ClientSecret, cfg.Auth0CallbackURL)
 	if err != nil {
 		log.Fatalf("Failed to initialize the authenticator: %v", err)
 	}
+	authMiddleware := middleware.AuthMiddleware{Auth: authenticator}
+
+	userRepo := repositories.NewGormUserRepository(db)
+	itemTypeRepo := repositories.NewGormItemTypeRepository(db)
+
+	itemTypeService := services.NewItemTypeService(userRepo, itemTypeRepo)
+
+	itemTypeHandler := handlers.NewItemTypeHandler(itemTypeService)
 
 	e := echo.New()
 	e.Use(session.Middleware(sessions.NewCookieStore([]byte(cfg.SessionSecret))))
 
-	// TODO(noatu): this may as well be inlined
-	// but it would be even better to move the echo (and auth) stuff in the router
-	router.New(e, auth, db, cfg)
+	api := e.Group("/api")
+
+	auth := api.Group("/auth")
+	auth.GET("/login", handlers.LoginHandler(authenticator))
+	auth.GET("/callback", handlers.CallbackHandler(authenticator, db))
+	auth.GET("/logout", handlers.LogoutHandler(cfg))
+	auth.POST("/change-password", handlers.UpdatePasswordHandler(cfg))
+
+	users := api.Group("/users")
+	users.GET("/me", handlers.ProfileHandler, authMiddleware.Middleware)
+
+	item_types := api.Group("/item-types")
+	item_types.POST("/create", itemTypeHandler.CreateItemType, authMiddleware.Middleware)
 
 	socket := fmt.Sprintf("%s:%s", cfg.AppAddress, cfg.AppPort)
 	log.Printf("Server listening on http://%s/", socket)
