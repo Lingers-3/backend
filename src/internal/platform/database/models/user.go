@@ -1,6 +1,8 @@
 package models
 
 import (
+	"context"
+
 	"gorm.io/gorm"
 )
 
@@ -22,4 +24,14 @@ type User struct {
 // GORM can determine the table name automagically, but in custom SQL queries this method could be usefull
 func (User) TableName() string {
 	return "Users" // NOTE(noatu): consisent case with "ItemType"
+}
+
+// NOTE(noatu): this one will be very repetetive
+func GetUserIDByAuth0ID(ctx context.Context, db *gorm.DB, auth0ID string) (uint, error) {
+	var model struct{ ID uint }
+	result := db.WithContext(ctx).Model(&User{}).First(&model, "auth0_id = ?", auth0ID)
+	if result.Error != nil {
+		return 0, result.Error
+	}
+	return model.ID, nil
 }

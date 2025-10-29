@@ -11,7 +11,6 @@ import (
 	"pocketeer/internal/delivery/http/middleware"
 	"pocketeer/internal/platform/authenticator"
 	"pocketeer/internal/platform/database"
-	"pocketeer/internal/platform/database/repositories"
 
 	"github.com/gorilla/sessions"
 	"github.com/joho/godotenv"
@@ -51,12 +50,7 @@ func main() {
 	}
 	authMiddleware := middleware.AuthMiddleware{Auth: authenticator}
 
-	userRepo := repositories.NewGormUserRepository(db)
-	itemTypeRepo := repositories.NewGormItemTypeRepository(db)
-
-	itemTypeService := services.NewItemTypeService(userRepo, itemTypeRepo)
-
-	itemTypeHandler := handlers.NewItemTypeHandler(itemTypeService)
+	itemTypeHandler := handlers.NewItemTypeHandler(services.NewItemTypeService(db))
 
 	e := echo.New()
 	e.Use(session.Middleware(sessions.NewCookieStore([]byte(cfg.SessionSecret))))

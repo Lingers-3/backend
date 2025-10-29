@@ -3,39 +3,37 @@ package services
 import (
 	"context"
 
+	"pocketeer/internal/platform/database"
 	"pocketeer/internal/platform/database/models"
-	"pocketeer/internal/platform/database/repositories"
 )
 
 type CreateItemTypeRequest struct {
-	Auth0ID             string
-	Name                string
-	BaseMeasurementUnit string
-	Description         *string
-	Category            *string
-	DefaultQuantity     *float32
-	Width               *float32
-	Height              *float32
-	Depth               *float32
+	Name                string   `json:"name"`
+	BaseMeasurementUnit string   `json:"base_measurement_unit"`
+	Description         *string  `json:"description"`
+	Category            *string  `json:"category"`
+	DefaultQuantity     *float32 `json:"default_quantity"`
+	Width               *float32 `json:"width"`
+	Height              *float32 `json:"height"`
+	Depth               *float32 `json:"depth"`
 }
 
 type ItemTypeService struct {
-	userRepo     repositories.UserRepository
-	itemTypeRepo repositories.ItemTypeRepository
+	db *database.DB
 }
 
-func NewItemTypeService(userRepo repositories.UserRepository, itemTypeRepo repositories.ItemTypeRepository) *ItemTypeService {
-	return &ItemTypeService{userRepo, itemTypeRepo}
+func NewItemTypeService(db *database.DB) *ItemTypeService {
+	return &ItemTypeService{db}
 }
 
-func (s *ItemTypeService) CreateItemType(ctx context.Context, req CreateItemTypeRequest) (*models.ItemType, error) {
-	user, err := s.userRepo.GetUserByAuth0ID(ctx, req.Auth0ID)
+func (s *ItemTypeService) CreateItemType(ctx context.Context, auth0ID string, req CreateItemTypeRequest) (*models.ItemType, error) {
+	ID, err := models.GetUserIDByAuth0ID(ctx, s.db, auth0ID)
 	if err != nil {
 		return nil, err
 	}
 
-	itemType := &models.ItemType{
-		UserID:              user.ID,
+	itemType := models.ItemType{
+		UserID:              ID,
 		Name:                req.Name,
 		Description:         req.Description,
 		Category:            req.Category,
@@ -46,9 +44,10 @@ func (s *ItemTypeService) CreateItemType(ctx context.Context, req CreateItemType
 		DefaultQuantity:     req.DefaultQuantity,
 	}
 
-	if err := s.itemTypeRepo.Create(ctx, itemType); err != nil {
-		return nil, err
+	result := s.db.WithContext(ctx).Create(&itemType)
+	if result.Error != nil {
+		return nil, result.Error
 	}
 
-	return itemType, nil
+	return &itemType, nil
 }

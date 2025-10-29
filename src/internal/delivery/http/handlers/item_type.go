@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"log"
 	"net/http"
 
@@ -8,32 +9,17 @@ import (
 	"pocketeer/internal/delivery/http/middleware"
 
 	"github.com/labstack/echo/v4"
+	"gorm.io/gorm"
 )
 
-type CreateItemTypeRequest struct {
-	Name                string   `json:"name"`
-	BaseMeasurementUnit string   `json:"base_measurement_unit"`
-	Description         *string  `json:"description"`
-	Category            *string  `json:"category"`
-	DefaultQuantity     *float32 `json:"default_quantity"`
-	Width               *float32 `json:"width"`
-	Height              *float32 `json:"height"`
-	Depth               *float32 `json:"depth"`
-}
+// type DeleteItemTypeRequest struct {
+// 	ID uint `json:"id"`
+// }
 
-type CreateItemTypeResponse struct {
-	// ID uint `json:"id"` // created item type id
-	// Error *uint `json:"error"`
-}
-
-type DeleteItemTypeRequest struct {
-	ID uint `json:"id"`
-}
-
-type DeleteItemTypeResponse struct {
-	Hard bool `json:"hard"` // false = soft delete
-	// Error *uint `json:"error"`
-}
+// type DeleteItemTypeResponse struct {
+// 	Hard bool `json:"hard"` // false = soft delete
+// 	// Error *uint `json:"error"`
+// }
 
 type ItemTypeHandler struct {
 	service *services.ItemTypeService
@@ -45,7 +31,7 @@ func NewItemTypeHandler(service *services.ItemTypeService) *ItemTypeHandler {
 
 // TODO(noatu): Pictures...
 func (h *ItemTypeHandler) CreateItemType(c echo.Context) error {
-	var payload CreateItemTypeRequest
+	var payload services.CreateItemTypeRequest
 	if err := c.Bind(&payload); err != nil {
 		log.Printf("ERROR: parsing request body: %v", err)
 		return c.NoContent(http.StatusBadRequest)
@@ -57,23 +43,16 @@ func (h *ItemTypeHandler) CreateItemType(c echo.Context) error {
 		return c.NoContent(http.StatusUnauthorized)
 	}
 
-	serviceReq := services.CreateItemTypeRequest{
-		Auth0ID:             auth0ID,
-		Name:                payload.Name,
-		BaseMeasurementUnit: payload.BaseMeasurementUnit,
-		Description:         payload.Description,
-		Category:            payload.Category,
-		DefaultQuantity:     payload.DefaultQuantity,
-		Width:               payload.Width,
-		Height:              payload.Height,
-		Depth:               payload.Depth,
-	}
-
-	_, err = h.service.CreateItemType(c.Request().Context(), serviceReq)
+	_, err = h.service.CreateItemType(c.Request().Context(), auth0ID, payload)
 	if err != nil {
 		log.Printf("ERROR: creating item type: %v", err)
+		// HACK(noatu): TLDR: this is wrong, but no idea what is right
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return c.NoContent(http.StatusNotFound)
+		}
+		// WARN(noatu): sending full err will probably expose too much
 		return c.NoContent(http.StatusInternalServerError)
 	}
 
-	return c.JSON(http.StatusOK, CreateItemTypeResponse{})
+	return c.NoContent(http.StatusOK)
 }
