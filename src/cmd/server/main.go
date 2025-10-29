@@ -48,7 +48,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to initialize the authenticator: %v", err)
 	}
-	authMiddleware := middleware.AuthMiddleware{Auth: authenticator}
+	authMiddleware := middleware.AuthMiddleware(authenticator)
 
 	itemTypeHandler := handlers.NewItemTypeHandler(services.NewItemTypeService(db))
 
@@ -64,10 +64,10 @@ func main() {
 	auth.POST("/change-password", handlers.UpdatePasswordHandler(cfg))
 
 	users := api.Group("/users")
-	users.GET("/me", handlers.ProfileHandler, authMiddleware.Middleware)
+	users.GET("/me", handlers.ProfileHandler, authMiddleware)
 
 	item_types := api.Group("/item-types")
-	item_types.POST("/create", itemTypeHandler.CreateItemType, authMiddleware.Middleware)
+	item_types.POST("/create", itemTypeHandler.CreateItemType, authMiddleware)
 
 	socket := fmt.Sprintf("%s:%s", cfg.AppAddress, cfg.AppPort)
 	log.Printf("Server listening on http://%s/", socket)
