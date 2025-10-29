@@ -18,9 +18,10 @@ func New(e *echo.Echo, authenticator *authenticator.Authenticator, db *db.DB, cf
 	auth.GET("/callback", handlers.CallbackHandler(authenticator, db))
 	auth.GET("/logout", handlers.LogoutHandler(cfg))
 	auth.POST("/change-password", handlers.UpdatePasswordHandler(cfg))
+	auth.GET("/post-login", handlers.PostLoginHandler(db), middleware.AuthMiddleware(authenticator))
 
 	users := api.Group("/users")
-	users.GET("/me", handlers.GetUserHandler, middleware.AuthMiddleware(authenticator))
+	users.GET("/me", handlers.GetUserHandler(cfg), middleware.AuthMiddleware(authenticator))
 	users.DELETE("/me", handlers.DeleteUserHandler(cfg, db), middleware.AuthMiddleware(authenticator))
 
 	return e

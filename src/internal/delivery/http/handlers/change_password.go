@@ -8,8 +8,8 @@ import (
 	"log"
 	"net/http"
 	"pocketeer/internal/config"
+	"pocketeer/internal/delivery/http/middleware"
 
-	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 )
 
@@ -27,18 +27,12 @@ func UpdatePasswordHandler(cfg *config.Config) echo.HandlerFunc {
 		var pwd UpdatePwdRequest
 		if err := c.Bind(&pwd); err != nil {
 			log.Printf("Failed to parse request body: %v", err)
-			return c.JSON(http.StatusBadRequest, map[string]string{
-				"error": "invalid request body",
-			})
+			return echo.NewHTTPError(http.StatusBadRequest, "invalid request body")
 		}
 
-		sess, _ := session.Get("session", c)
-		auth0ID, ok := sess.Values["auth0_id"].(string)
+		auth0ID, ok := middleware.GetAuth0IDFromRequest(c)
 		if !ok || auth0ID == "" {
-			log.Printf("auth0ID not found in session")
-			return c.JSON(http.StatusUnauthorized, map[string]string{
-				"error": "unauthorized: invalid session",
-			})
+			return echo.NewHTTPError(http.StatusUnauthorized)
 		}
 
 		url := fmt.Sprintf("https://%s/api/v2/users/%s", cfg.Auth0Domain, auth0ID)
@@ -49,9 +43,7 @@ func UpdatePasswordHandler(cfg *config.Config) echo.HandlerFunc {
 		body, err := json.Marshal(payload)
 		if err != nil {
 			log.Printf("Failed to encode request payload: %v", err)
-			return c.JSON(http.StatusInternalServerError, map[string]string{
-				"error": "internal error",
-			})
+			return echo.NewHTTPError(http.StatusInternalServerError)
 		}
 
 		req, _ := http.NewRequest("PATCH", url, bytes.NewBuffer(body))
@@ -64,18 +56,14 @@ func UpdatePasswordHandler(cfg *config.Config) echo.HandlerFunc {
 		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
 			log.Printf("Auth0 request failed: %v", err)
-			return c.JSON(http.StatusInternalServerError, map[string]string{
-				"error": "internal error",
-			})
+			return echo.NewHTTPError(http.StatusInternalServerError)
 		}
 		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusOK {
 			bodyBytes, _ := io.ReadAll(resp.Body)
 			log.Printf("Auth0 responded with status %d: %s", resp.StatusCode, string(bodyBytes))
-			return c.JSON(http.StatusInternalServerError, map[string]string{
-				"error": "internal error",
-			})
+			return echo.NewHTTPError(http.StatusInternalServerError)
 		}
 
 		return c.JSON(http.StatusOK, map[string]string{

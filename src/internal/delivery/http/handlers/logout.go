@@ -15,7 +15,7 @@ func LogoutHandler(cfg *config.Config) echo.HandlerFunc {
 		sess, _ := session.Get("session", c)
 		sess.Options.MaxAge = -1
 		if err := sess.Save(c.Request(), c.Response()); err != nil {
-			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to clear session"})
+			return echo.NewHTTPError(http.StatusInternalServerError)
 		}
 
 		logoutURL := fmt.Sprintf(

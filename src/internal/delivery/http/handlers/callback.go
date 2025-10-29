@@ -17,40 +17,44 @@ func CallbackHandler(auth *authenticator.Authenticator, db *gorm.DB) echo.Handle
 		sess, _ := session.Get("session", c)
 
 		if c.QueryParam("state") != sess.Values["state"] {
-			return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid state parameter."})
+			return echo.NewHTTPError(http.StatusBadRequest, "invalid state parameter.")
 		}
 
 		verifier, ok := sess.Values["code_verifier"].(string)
 		if !ok {
-			return c.JSON(http.StatusBadRequest, map[string]string{"error": "code verifier not found in session."})
+			return echo.NewHTTPError(http.StatusBadRequest, "invalid code verifier.")
 		}
 
 		token, err := auth.ExchangeWithPKCE(c.Request().Context(), c.QueryParam("code"), verifier)
 		if err != nil {
-			return c.JSON(http.StatusUnauthorized, map[string]string{"error": "failed to exchange an authorization code for a token."})
+			return echo.NewHTTPError(http.StatusUnauthorized, "PKCE verification failed.")
 		}
 
 		idToken, err := auth.VerifyIDToken(c.Request().Context(), token)
 		if err != nil {
-			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to verify ID Token."})
+			return echo.NewHTTPError(http.StatusInternalServerError)
 		}
 
 		var profile map[string]interface{}
 		if err := idToken.Claims(&profile); err != nil {
-			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to parse ID token."})
+			return echo.NewHTTPError(http.StatusInternalServerError)
 		}
 
 		auth0ID, ok := profile["sub"].(string)
 		if !ok {
-			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "invalid sub claim"})
+			return echo.NewHTTPError(http.StatusInternalServerError)
 		}
 
 		email, ok := profile["email"].(string)
 		if !ok {
-			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "invalid email claim"})
+			return echo.NewHTTPError(http.StatusInternalServerError)
 		}
 
 		emailVerified, _ := profile["email_verified"].(bool)
+
+		if !emailVerified {
+			return echo.NewHTTPError(http.StatusForbidden, "email not verified")
+		}
 
 		var user models.User
 		result := db.First(&user, "auth0_id = ?", auth0ID)
@@ -63,29 +67,22 @@ func CallbackHandler(auth *authenticator.Authenticator, db *gorm.DB) echo.Handle
 				}
 				if err := db.Create(&user).Error; err != nil {
 					log.Printf("failed to create user: %v", err)
-					return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to create user"})
+					return echo.NewHTTPError(http.StatusInternalServerError)
 				}
 				log.Printf("New user created: %s (%s)", auth0ID, email)
 
 			} else {
 				log.Printf("DB error: %v", result.Error)
-				return c.JSON(http.StatusInternalServerError, map[string]string{"error": "internal error"})
-			}
-		} else {
-			if !emailVerified {
-				return c.JSON(http.StatusForbidden, map[string]string{"error": "email not verified"})
+				return echo.NewHTTPError(http.StatusInternalServerError)
 			}
 		}
 
-		sess.Values["profile"] = profile
-		sess.Values["user_id"] = user.ID
-		sess.Values["auth0_id"] = user.Auth0ID
-		sess.Values["email"] = user.Email
 		sess.Values["access_token"] = token.AccessToken
+
 		sess.Values["refresh_token"] = token.RefreshToken
 		if err := sess.Save(c.Request(), c.Response()); err != nil {
 			log.Printf("failed to save session: %v", err)
-			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to save session"})
+			return echo.NewHTTPError(http.StatusInternalServerError)
 		}
 
 		redirectUri, ok := sess.Values["redirect_uri"].(string)

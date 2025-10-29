@@ -51,12 +51,27 @@ func main() {
 		log.Println("Database closed successfully")
 	}()
 
-	auth, err := authenticator.New(cfg.Auth0Domain, cfg.Auth0ClientID, cfg.Auth0ClientSecret, cfg.Auth0CallbackURL)
+	auth, err := authenticator.New(
+		cfg.Auth0Domain,
+		cfg.Auth0ClientID,
+		cfg.Auth0ClientSecret,
+		cfg.Auth0Audience,
+		cfg.Auth0CallbackURL)
 	if err != nil {
 		log.Fatalf("Failed to initialize the authenticator: %v", err)
 	}
 
 	e := echo.New()
+
+	e.Debug = true
+
+	e.Use(middleware.Logger())
+	e.Use(middleware.Recover())
+
+	e.HTTPErrorHandler = func(err error, c echo.Context) {
+		c.Logger().Error(err)
+		e.DefaultHTTPErrorHandler(err, c)
+	}
 
 	// TODO(pencelheimer): move it to the separate function?
 	allowedOrigins := []string{"https://pocketeer.linerds.us", "http://localhost:5173", "https://pocketeer-dev.vercel.app"}
