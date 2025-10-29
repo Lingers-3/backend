@@ -60,6 +60,7 @@ func Init(cfg *config.Config) (db *DB, err error) {
 		&models.User{},
 		&models.Picture{},
 		&models.ItemType{},
+		&models.Item{},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to run migrations: %v", err)

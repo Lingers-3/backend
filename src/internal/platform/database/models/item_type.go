@@ -19,6 +19,7 @@ type ItemType struct {
 
 	// https://gorm.io/docs/has_many.html
 	UserID uint
+	Items []Item `gorm:"constraint:OnDelete:CASCADE;"`
 
 	// NOTE(noatu): GORM has two types of one-to-one relations:
 	// 1. Belongs To: https://gorm.io/docs/belongs_to.html

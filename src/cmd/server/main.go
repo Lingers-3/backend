@@ -51,6 +51,7 @@ func main() {
 	authMiddleware := middleware.AuthMiddleware(authenticator)
 
 	itemTypeHandler := handlers.NewItemTypeHandler(services.NewItemTypeService(db))
+	itemHandler := handlers.NewItemHandler(services.NewItemService(db))
 
 	e := echo.New()
 	e.Use(session.Middleware(sessions.NewCookieStore([]byte(cfg.SessionSecret))))
@@ -69,6 +70,9 @@ func main() {
 	item_types := api.Group("/item-types")
 	item_types.POST("/create", itemTypeHandler.CreateItemType, authMiddleware)
 
+	itemHandler.RegisterRoutes(api, authMiddleware)
+
+	// TODO(pencelheimer): Echo already prints this info
 	socket := fmt.Sprintf("%s:%s", cfg.AppAddress, cfg.AppPort)
 	log.Printf("Server listening on http://%s/", socket)
 	e.Logger.Fatal(e.Start(socket))
