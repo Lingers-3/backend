@@ -15,7 +15,7 @@ func NewItemHandler(service *services.ItemService) *ItemHandler {
 	return &ItemHandler{service}
 }
 
-func (h ItemHandler) RegisterRoutes(router echo.Group, middlewares ...echo.MiddlewareFunc) {
+func (h *ItemHandler) RegisterRoutes(router *echo.Group, middlewares ...echo.MiddlewareFunc) {
 	group := router.Group("/items", middlewares...)
 	group.POST("/create", h.CreateItem)
 	group.DELETE("/delete", h.DeleteItem)
