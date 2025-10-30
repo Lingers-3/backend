@@ -58,6 +58,7 @@ func Init(cfg *config.Config) (db *DB, err error) {
 	// NOTE(pencelheimer/gemini): consider dedicated migration tools (Goose, Migrate)
 	err = db.AutoMigrate(
 		&models.User{},
+		&models.Tag{},
 		&models.Picture{},
 		&models.ItemType{},
 		&models.Item{},

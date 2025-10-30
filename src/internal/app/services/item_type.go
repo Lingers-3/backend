@@ -7,23 +7,22 @@ import (
 	"pocketeer/internal/platform/database/models"
 )
 
-type CreateItemTypeRequest struct {
-	Name                string   `json:"name"`
-	BaseMeasurementUnit string   `json:"base_measurement_unit"`
-	Description         *string  `json:"description"`
-	Category            *string  `json:"category"`
-	DefaultQuantity     *float32 `json:"default_quantity"`
-	Width               *float32 `json:"width"`
-	Height              *float32 `json:"height"`
-	Depth               *float32 `json:"depth"`
-}
-
 type ItemTypeService struct {
 	db *database.DB
 }
 
 func NewItemTypeService(db *database.DB) *ItemTypeService {
 	return &ItemTypeService{db}
+}
+
+type CreateItemTypeRequest struct {
+	Name                string  `json:"name"`
+	Description         *string `json:"description"`
+	BaseMeasurementUnit string  `json:"base_measurement_unit"`
+	// QUESTION(noatu): may I drop "Default" all over the codebase?
+	DefaultDisplayMeasurementUnit string   `json:"default_display_measurement_unit"`
+	DefaultQuantity               *float32 `json:"default_quantity"`
+	ShortageTreshold              *float32 `json:"shortage_threshold"`
 }
 
 func (s *ItemTypeService) CreateItemType(ctx context.Context, auth0ID string, req CreateItemTypeRequest) (*models.ItemType, error) {
@@ -33,15 +32,13 @@ func (s *ItemTypeService) CreateItemType(ctx context.Context, auth0ID string, re
 	}
 
 	itemType := models.ItemType{
-		UserID:              ID,
-		Name:                req.Name,
-		Description:         req.Description,
-		Category:            req.Category,
-		BaseMeasurementUnit: req.BaseMeasurementUnit,
-		Width:               req.Width,
-		Height:              req.Height,
-		Depth:               req.Depth,
-		DefaultQuantity:     req.DefaultQuantity,
+		UserID:                        ID,
+		Name:                          req.Name,
+		Description:                   req.Description,
+		BaseMeasurementUnit:           req.BaseMeasurementUnit,
+		DefaultDisplayMeasurementUnit: req.DefaultDisplayMeasurementUnit,
+		DefaultQuantity:               req.DefaultQuantity,
+		ShortageThreshold:             req.ShortageTreshold,
 	}
 
 	result := s.db.WithContext(ctx).Create(&itemType)

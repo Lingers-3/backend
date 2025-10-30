@@ -17,6 +17,9 @@ type Item struct {
 
 	// https://gorm.io/docs/has_many.html
 	ItemTypeID uint
+
+	// https://gorm.io/docs/many_to_many.html
+	Tags []Tag `gorm:"many2many:item_tags;"`
 }
 
 func (Item) TableName() string {

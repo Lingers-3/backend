@@ -18,6 +18,7 @@ type User struct {
 
 	// https://gorm.io/docs/has_many.html
 	ItemTypes []ItemType `gorm:"constraint:OnDelete:CASCADE;"`
+	Tags      []Tag      `gorm:"constraint:OnDelete:CASCADE;"`
 }
 
 // TableName method will override the default table name used by GORM
@@ -26,7 +27,7 @@ func (User) TableName() string {
 	return "Users" // NOTE(noatu): consisent case with "ItemType"
 }
 
-// NOTE(noatu): this one will be very repetetive
+// NOTE(noatu): this one will be very repetitive
 func GetUserIDByAuth0ID(ctx context.Context, db *gorm.DB, auth0ID string) (uint, error) {
 	var model struct{ ID uint }
 	result := db.WithContext(ctx).Model(&User{}).First(&model, "auth0_id = ?", auth0ID)
