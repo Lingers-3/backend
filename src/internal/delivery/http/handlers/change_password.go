@@ -8,7 +8,6 @@ import (
 	"log"
 	"net/http"
 	"pocketeer/internal/config"
-	"pocketeer/internal/delivery/http/middleware"
 
 	"github.com/labstack/echo/v4"
 )
@@ -35,7 +34,7 @@ func UpdatePasswordHandler(cfg *config.Config) echo.HandlerFunc {
 		}
 
 		// QUESTION(noatu): should authorization be checked before http request?
-		auth0ID, err := middleware.GetAuth0ID(c)
+		auth0ID, err := GetAuth0ID(c)
 		if err != nil {
 			// QUESTION(noatu): status code says it all?
 			// return c.NoContent(http.StatusUnauthorized)

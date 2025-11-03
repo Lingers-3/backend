@@ -67,12 +67,11 @@ func main() {
 	users := api.Group("/users")
 	users.GET("/me", handlers.ProfileHandler, authMiddleware)
 
-	item_types := api.Group("/item-types")
-	item_types.POST("/create", itemTypeHandler.CreateItemType, authMiddleware)
-
+	itemTypeHandler.RegisterRoutes(api, authMiddleware)
 	itemHandler.RegisterRoutes(api, authMiddleware)
 
 	// TODO(pencelheimer): Echo already prints this info
+	// NOTE(noatu): Then delete it?
 	socket := fmt.Sprintf("%s:%s", cfg.AppAddress, cfg.AppPort)
 	log.Printf("Server listening on http://%s/", socket)
 	e.Logger.Fatal(e.Start(socket))
