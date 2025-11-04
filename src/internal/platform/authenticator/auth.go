@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"errors"
+	"log"
 	"time"
 
 	"github.com/coreos/go-oidc/v3/oidc"
@@ -15,9 +16,11 @@ import (
 type Authenticator struct {
 	*oidc.Provider
 	oauth2.Config
+	Audience string
+	Domain   string
 }
 
-func New(domain string, clientId string, clientSecret string, redirectUrl string) (*Authenticator, error) {
+func New(domain string, clientId, clientSecret, audience, redirectUrl string) (*Authenticator, error) {
 	provider, err := oidc.NewProvider(
 		context.Background(),
 		"https://"+domain+"/",
@@ -37,6 +40,8 @@ func New(domain string, clientId string, clientSecret string, redirectUrl string
 	return &Authenticator{
 		Provider: provider,
 		Config:   conf,
+		Audience: audience,
+		Domain:   domain,
 	}, nil
 }
 
@@ -56,9 +61,13 @@ func (a *Authenticator) VerifyIDToken(ctx context.Context, token *oauth2.Token) 
 func (a *Authenticator) AuthCodeURLWithPKCE(state string, verifier string) string {
 	challenge := generateCodeChallenge(verifier)
 
-	return a.Config.AuthCodeURL(state,
+	log.Printf("Audience: %v", a.Audience)
+
+	return a.Config.AuthCodeURL(
+		state,
 		oauth2.SetAuthURLParam("code_challenge", challenge),
 		oauth2.SetAuthURLParam("code_challenge_method", "S256"),
+		oauth2.SetAuthURLParam("audience", a.Audience),
 	)
 }
 
@@ -99,6 +108,24 @@ func (a *Authenticator) IsExpired(accessToken string) bool {
 	}
 
 	return time.Unix(int64(exp), 0).Before(time.Now())
+}
+
+func (a *Authenticator) IsValidAccessToken(ctx context.Context, tokenStr string) (bool, error) {
+	provider, err := oidc.NewProvider(ctx, "https://"+a.Domain+"/")
+	if err != nil {
+		return false, err
+	}
+
+	verifier := provider.Verifier(&oidc.Config{
+		ClientID: a.Audience,
+	})
+
+	_, err = verifier.Verify(ctx, tokenStr)
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
 }
 
 func generateCodeChallenge(verifier string) string {
