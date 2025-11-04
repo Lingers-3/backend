@@ -25,19 +25,19 @@ func LoginHandler(auth *authenticator.Authenticator) echo.HandlerFunc {
 		state, err := generateRandomState()
 		if err != nil {
 			log.Printf("failed to generate state: %v", err)
-			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "internal error"})
+			return redirectWithError(c, 500, "internal server error")
 		}
 		verifier, err := generateCodeVerifier()
 		if err != nil {
 			log.Printf("failed to generate code verifier: %v", err)
-			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "internal error"})
+			return redirectWithError(c, 500, "internal server error")
 		}
 
 		sess.Values["state"] = state
 		sess.Values["code_verifier"] = verifier
 		if err := sess.Save(c.Request(), c.Response()); err != nil {
 			log.Printf("failed to save session: %v", err)
-			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "internal error"})
+			return redirectWithError(c, 500, "internal server error")
 		}
 
 		return c.Redirect(http.StatusTemporaryRedirect, auth.AuthCodeURLWithPKCE(state, verifier))

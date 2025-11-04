@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -10,6 +11,14 @@ import (
 
 	"github.com/labstack/echo/v4"
 )
+
+type User struct {
+	Auth0ID       string `json:"sub"`
+	Nickname      string `json:"nickname"`
+	Picture       string `json:"picture"`
+	Email         string `json:"email"`
+	EmailVerified bool   `json:"email_verified"`
+}
 
 func GetUserHandler(cfg *config.Config) echo.HandlerFunc {
 	return func(c echo.Context) error {
@@ -35,13 +44,23 @@ func GetUserHandler(cfg *config.Config) echo.HandlerFunc {
 			log.Printf("Auth0 request failed: %v", err)
 			return echo.NewHTTPError(http.StatusUnauthorized)
 		}
+		defer resp.Body.Close()
 
 		bodyBytes, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusInternalServerError, "failed to read response body")
+			return echo.NewHTTPError(http.StatusInternalServerError)
 		}
-		defer resp.Body.Close()
 
-		return c.JSONBlob(http.StatusOK, bodyBytes)
+		var user User
+		if err := json.Unmarshal(bodyBytes, &user); err != nil {
+			log.Printf("Failed to unmarshal Auth0 response: %v", err)
+			return echo.NewHTTPError(http.StatusInternalServerError)
+		}
+
+		if !user.EmailVerified {
+			return echo.NewHTTPError(http.StatusForbidden, "email not verified")
+		}
+
+		return c.JSON(http.StatusOK, user)
 	}
 }
