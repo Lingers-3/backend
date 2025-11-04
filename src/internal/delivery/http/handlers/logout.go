@@ -23,7 +23,7 @@ func LogoutHandler(cfg *config.Config) echo.HandlerFunc {
 			"https://%s/v2/logout?client_id=%s&returnTo=%s",
 			cfg.Auth0Domain,
 			cfg.Auth0ClientID,
-			url.QueryEscape(cfg.AppBaseUrl),
+			url.QueryEscape("https://pocketeer.linerds.us"),
 		)
 
 		return c.Redirect(http.StatusTemporaryRedirect, logoutURL)
