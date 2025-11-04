@@ -12,12 +12,14 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-// NOTE(noatu): spaghetti with services but it is http
+// NOTE(noatu): spaghetti with services but it is http so should be here
 func ServiceErrToHttp(err error) *echo.HTTPError {
 	switch {
 	case errors.Is(err, services.ErrUnauthenticated):
 		return echo.NewHTTPError(http.StatusUnauthorized, err)
-	case errors.Is(err, services.ErrItemTypeNotFound):
+	case errors.Is(err, services.ErrItemTypeNotFound) ||
+		errors.Is(err, services.ErrItemNotFound) ||
+		errors.Is(err, services.ErrTagNotFound):
 		return echo.NewHTTPError(http.StatusNotFound, err)
 	default:
 		return echo.NewHTTPError(http.StatusInternalServerError)

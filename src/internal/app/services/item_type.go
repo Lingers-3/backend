@@ -29,6 +29,8 @@ type ItemType struct { //  ∠( ᐛ 」∠)
 	DefaultQuantity        *float32   `json:"default_quantity"`
 	ShortageTreshold       *float32   `json:"shortage_threshold"`
 	PictureID              *uint      `json:"picture_id,omitempty"`
+	ItemIDs                []uint     `json:"item_ids"`
+	TagIDs                 []uint     `json:"tag_ids"`
 	CreatedAt              time.Time  `json:"created_at"`
 	UpdatedAt              time.Time  `json:"updated_at"`
 	DeletedAt              *time.Time `json:"deleted_at,omitempty"`
@@ -40,6 +42,16 @@ func ItemTypeFromModel(m *models.ItemType) *ItemType {
 		deletedAt = &m.DeletedAt.Time
 	}
 
+	itemIDs := make([]uint, len(m.Items))
+	for i, item := range m.Items {
+		itemIDs[i] = item.ID
+	}
+
+	tagIDs := make([]uint, len(m.Tags))
+	for i, tag := range m.Tags {
+		tagIDs[i] = tag.ID
+	}
+
 	return &ItemType{
 		ID:                     m.ID,
 		Name:                   m.Name,
@@ -49,6 +61,8 @@ func ItemTypeFromModel(m *models.ItemType) *ItemType {
 		DefaultQuantity:        m.DefaultQuantity,
 		ShortageTreshold:       m.ShortageThreshold,
 		PictureID:              m.PictureID,
+		ItemIDs:                itemIDs,
+		TagIDs:                 tagIDs,
 		CreatedAt:              m.CreatedAt,
 		UpdatedAt:              m.UpdatedAt,
 		DeletedAt:              deletedAt,
@@ -62,18 +76,7 @@ type ItemTypeCreateRequest struct {
 	DisplayMeasurementUnit string   `json:"display_measurement_unit"`
 	DefaultQuantity        *float32 `json:"default_quantity"`
 	ShortageTreshold       *float32 `json:"shortage_threshold"`
-}
-
-func ItemTypeModelFromCreateRequest(r ItemTypeCreateRequest, userID uint) *models.ItemType {
-	return &models.ItemType{
-		UserID:                 userID,
-		Name:                   r.Name,
-		Description:            r.Description,
-		BaseMeasurementUnit:    r.BaseMeasurementUnit,
-		DisplayMeasurementUnit: r.DisplayMeasurementUnit,
-		DefaultQuantity:        r.DefaultQuantity,
-		ShortageThreshold:      r.ShortageTreshold,
-	}
+	TagIDs                 []uint   `json:"tag_ids"`
 }
 
 func (s *ItemTypeService) Create(ctx context.Context, auth0ID string, req ItemTypeCreateRequest) (*ItemType, error) {
@@ -82,12 +85,44 @@ func (s *ItemTypeService) Create(ctx context.Context, auth0ID string, req ItemTy
 		return nil, err
 	}
 
-	itemType := ItemTypeModelFromCreateRequest(req, userID)
+	itemType := &models.ItemType{
+		UserID:                 userID,
+		Name:                   req.Name,
+		Description:            req.Description,
+		BaseMeasurementUnit:    req.BaseMeasurementUnit,
+		DisplayMeasurementUnit: req.DisplayMeasurementUnit,
+		DefaultQuantity:        req.DefaultQuantity,
+		ShortageThreshold:      req.ShortageTreshold,
+	}
 
 	result := s.db.WithContext(ctx).Create(itemType)
 	if result.Error != nil {
 		log.Printf("ERROR: creating item type: %v", err)
 		return nil, ErrDatabaseError
+	}
+
+	// Fetch only existing tags
+	// NOTE(noatu): Not sure about handling errors, don't want to abort operation because of tags.
+	// The tag id list will be returned, so frontend may check if it is correct.
+	var tags []models.Tag
+	if len(req.TagIDs) > 0 {
+		err = s.db.WithContext(ctx).
+			Where("id IN ? AND user_id = ?", req.TagIDs, userID).
+			Find(&tags).Error
+		if err != nil {
+			log.Printf("ERROR: fetching tags: %v", err)
+			// ignore
+		}
+	}
+	// Associate tags
+	if len(tags) > 0 {
+		err = s.db.WithContext(ctx).Model(itemType).Association("Tags").Append(tags)
+		if err != nil {
+			log.Printf("ERROR: associating tags: %v", err)
+			// ignore
+		} else {
+			itemType.Tags = tags // HACK(noatu): no need to refetch
+		}
 	}
 
 	return ItemTypeFromModel(itemType), nil
@@ -102,6 +137,13 @@ func (s *ItemTypeService) Get(ctx context.Context, auth0ID string, itemTypeID ui
 	var itemType models.ItemType
 	err = s.db.WithContext(ctx).
 		Unscoped(). // include soft-deleted records
+		Preload("Items", func(db *gorm.DB) *gorm.DB {
+			// Foreign key must be selected: https://gorm.io/gen/associations.html#Preload-with-select
+			return db.Select("id", "item_type_id")
+		}).
+		Preload("Tags", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id")
+		}).
 		Where("id = ? AND user_id = ?", itemTypeID, userID).
 		First(&itemType).Error
 	if err != nil {
@@ -124,6 +166,13 @@ func (s *ItemTypeService) GetAll(ctx context.Context, auth0ID string) ([]*ItemTy
 	var itemTypes []models.ItemType
 	err = s.db.WithContext(ctx).
 		Unscoped(). // include soft-deleted records
+		Preload("Items", func(db *gorm.DB) *gorm.DB {
+			// Foreign key must be selected: https://gorm.io/gen/associations.html#Preload-with-select
+			return db.Select("id", "item_type_id")
+		}).
+		Preload("Tags", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id")
+		}).
 		Where("user_id = ?", userID).Find(&itemTypes).Error
 	if err != nil {
 		log.Printf("ERROR: fetching item types: %v", err)
@@ -145,6 +194,8 @@ type ItemTypeUpdateRequest struct {
 	DisplayMeasurementUnit *string  `json:"display_measurement_unit"`
 	DefaultQuantity        *float32 `json:"default_quantity"`
 	ShortageThreshold      *float32 `json:"shortage_threshold"`
+	TagIDs                 *[]uint  `json:"tag_ids"`
+	Restore                *bool    `json:"restore"` // true = restore soft-deleted item
 }
 
 func (s *ItemTypeService) Update(ctx context.Context, auth0ID string, itemTypeID uint, req ItemTypeUpdateRequest) (*ItemType, error) {
@@ -187,11 +238,38 @@ func (s *ItemTypeService) Update(ctx context.Context, auth0ID string, itemTypeID
 	if req.ShortageThreshold != nil {
 		updates["shortage_threshold"] = *req.ShortageThreshold
 	}
+	if req.Restore != nil && *req.Restore {
+		updates["deleted_at"] = nil
+	}
 
-	err = s.db.WithContext(ctx).Model(&itemType).Updates(updates).Error
-	if err != nil {
-		log.Printf("ERROR: updating item type: %v", err)
-		return nil, ErrDatabaseError
+	if len(updates) > 0 {
+		err = s.db.WithContext(ctx).Model(&itemType).Updates(updates).Error
+		if err != nil {
+			log.Printf("ERROR: updating item type: %v", err)
+			return nil, ErrDatabaseError
+		}
+	}
+
+	// NOTE(noatu): see the Create function
+	var tags []models.Tag
+	if req.TagIDs != nil && len(*req.TagIDs) > 0 {
+		err = s.db.WithContext(ctx).
+			Where("id IN ? AND user_id = ?", req.TagIDs, userID).
+			Find(&tags).Error
+		if err != nil {
+			log.Printf("ERROR: fetching tags: %v", err)
+			// ignore
+		}
+	}
+	// Replace tags
+	if len(tags) > 0 {
+		err = s.db.WithContext(ctx).Model(itemType).Association("Tags").Replace(tags)
+		if err != nil {
+			log.Printf("ERROR: associating tags: %v", err)
+			// ignore
+		} else {
+			itemType.Tags = tags // HACK(noatu): no need to refetch
+		}
 	}
 
 	return ItemTypeFromModel(&itemType), nil

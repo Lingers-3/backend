@@ -17,13 +17,12 @@ func NewItemTypeHandler(service *services.ItemTypeService) *ItemTypeHandler {
 }
 
 func (h *ItemTypeHandler) RegisterRoutes(router *echo.Group, middlewares ...echo.MiddlewareFunc) {
-	// HACK(noatu): not sure if group without a prefix is ok
-	group := router.Group("", middlewares...)
-	group.POST("/item-type", h.Create)
-	group.GET("/item-type", h.GetAll)
-	group.GET("/item-type/:id", h.Get)
-	group.PATCH("/item-type/:id", h.Update)
-	group.DELETE("/item-type/:id", h.Delete)
+	group := router.Group("item-types", middlewares...)
+	group.POST("", h.Create)
+	group.GET("", h.GetAll)
+	group.GET("/:id", h.Get)
+	group.PATCH("/:id", h.Update)
+	group.DELETE("/:id", h.Delete)
 }
 
 func (h *ItemTypeHandler) Create(c echo.Context) error {

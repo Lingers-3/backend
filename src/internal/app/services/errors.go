@@ -7,6 +7,8 @@ var (
 
 	ErrUnauthenticated  = errors.New("unauthenticated, please log in (again)")
 	ErrItemTypeNotFound = errors.New("item type not found")
+	ErrItemNotFound     = errors.New("item not found")
+	ErrTagNotFound      = errors.New("tag not found")
 
 	// WARN(noatu): claims that something exists, use *NotFound
 	// ErrForbidden     = errors.New("forbidden")
