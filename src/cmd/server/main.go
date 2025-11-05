@@ -52,6 +52,7 @@ func main() {
 
 	itemTypeHandler := handlers.NewItemTypeHandler(services.NewItemTypeService(db))
 	itemHandler := handlers.NewItemHandler(services.NewItemService(db))
+	tagHandler := handlers.NewTagHandler(services.NewTagService(db))
 
 	e := echo.New()
 	e.Use(session.Middleware(sessions.NewCookieStore([]byte(cfg.SessionSecret))))
@@ -69,6 +70,7 @@ func main() {
 
 	itemTypeHandler.RegisterRoutes(api, authMiddleware)
 	itemHandler.RegisterRoutes(api, authMiddleware)
+	tagHandler.RegisterRoutes(api, authMiddleware)
 
 	// TODO(pencelheimer): Echo already prints this info
 	// NOTE(noatu): Then delete it?
