@@ -139,8 +139,8 @@ func (s *ItemService) Get(ctx context.Context, auth0ID string, itemID uint) (*It
 	err = s.db.WithContext(ctx).
 		Unscoped().
 		Preload("Tags", func(db *gorm.DB) *gorm.DB { return db.Select("id") }).
-		Joins("JOIN ItemTypes ON ItemTypes.id = Items.item_type_id").
-		Where("ItemTypes.user_id = ? AND Items.id = ?", userID, itemID).
+		Joins(`JOIN "ItemTypes" ON "ItemTypes".id = "Items".item_type_id`).
+		Where(`"ItemTypes".user_id = ? AND "Items".id = ?`, userID, itemID).
 		First(&item).Error
 
 	if err != nil {
@@ -164,8 +164,8 @@ func (s *ItemService) GetAll(ctx context.Context, auth0ID string) ([]*Item, erro
 	err = s.db.WithContext(ctx).
 		Unscoped().
 		Preload("Tags", func(db *gorm.DB) *gorm.DB { return db.Select("id") }).
-		Joins("JOIN ItemTypes ON ItemTypes.id = Items.item_type_id").
-		Where("ItemTypes.user_id = ?", userID).
+		Joins(`JOIN "ItemTypes" ON "ItemTypes".id = "Items".item_type_id`).
+		Where(`"ItemTypes".user_id = ?`, userID).
 		Find(&items).Error
 
 	if err != nil {
@@ -199,8 +199,8 @@ func (s *ItemService) Update(ctx context.Context, auth0ID string, ID uint, req I
 	var item models.Item
 	result := s.db.WithContext(ctx).
 		Preload("Tags").
-		Joins("JOIN ItemTypes ON ItemTypes.id = Items.item_type_id").
-		Where("ItemTypes.user_id = ? AND Items.id = ?", userID, ID).
+		Joins(`JOIN "ItemTypes" ON "ItemTypes".id = "Items".item_type_id`).
+		Where(`"ItemTypes".user_id = ? AND "Items".id = ?`, userID, ID).
 		First(&item)
 
 	if result.Error != nil {
@@ -229,7 +229,7 @@ func (s *ItemService) Update(ctx context.Context, auth0ID string, ID uint, req I
 	if len(updates) > 0 {
 		result = s.db.WithContext(ctx).Model(&item).Updates(updates)
 		if result.Error != nil {
-			log.Printf("ERROR: updating item: %v", result.Error) // Використовуйте result.Error
+			log.Printf("ERROR: updating item: %v", result.Error)
 			return nil, ErrDatabaseError
 		}
 	}
@@ -270,8 +270,8 @@ func (s *ItemService) Delete(ctx context.Context, auth0ID string, itemID uint) (
 	err = s.db.WithContext(ctx).
 		Unscoped().
 		Select("Items.id").
-		Joins("JOIN ItemTypes ON ItemTypes.id = Items.item_type_id").
-		Where("ItemTypes.user_id = ? AND Items.id = ?", userID, itemID).
+		Joins(`JOIN "ItemTypes" ON "ItemTypes".id = "Items".item_type_id`).
+		Where(`"ItemTypes".user_id = ? AND "Items".id = ?`, userID, itemID).
 		First(&item).Error
 
 	if err != nil {

@@ -40,7 +40,7 @@ func (ItemType) TableName() string {
 }
 
 type ItemTypeDefaults struct {
-	DefaultDisplayMeasurementUnit string
+	DisplayMeasurementUnit string
 	DefaultQuantity               float32
 }
 
