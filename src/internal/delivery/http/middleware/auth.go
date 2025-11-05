@@ -3,7 +3,9 @@ package middleware
 import (
 	"net/http"
 	"pocketeer/internal/platform/authenticator"
+	"strings"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 )
@@ -39,4 +41,36 @@ func AuthMiddleware(auth *authenticator.Authenticator) echo.MiddlewareFunc {
 			return next(c)
 		}
 	}
+}
+
+func GetAuth0IDFromRequest(c echo.Context) (string, bool) {
+	var tokenStr string
+
+	sess, _ := session.Get("session", c)
+	if tok, ok := sess.Values["access_token"].(string); ok && tok != "" {
+		tokenStr = tok
+	} else {
+		authHeader := c.Request().Header.Get("Authorization")
+		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
+			return "", false
+		}
+		tokenStr = strings.TrimSpace(strings.TrimPrefix(authHeader, "Bearer "))
+	}
+
+	token, _, err := new(jwt.Parser).ParseUnverified(tokenStr, jwt.MapClaims{})
+	if err != nil {
+		return "", false
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return "", false
+	}
+
+	sub, ok := claims["sub"].(string)
+	if !ok || sub == "" {
+		return "", false
+	}
+
+	return sub, true
 }
