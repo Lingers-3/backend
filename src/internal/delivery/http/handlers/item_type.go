@@ -17,7 +17,7 @@ func NewItemTypeHandler(service *services.ItemTypeService) *ItemTypeHandler {
 }
 
 func (h *ItemTypeHandler) RegisterRoutes(router *echo.Group, middlewares ...echo.MiddlewareFunc) {
-	group := router.Group("item-types", middlewares...)
+	group := router.Group("/item-types", middlewares...)
 	group.POST("", h.Create)
 	group.GET("", h.GetAll)
 	group.GET("/:id", h.Get)
