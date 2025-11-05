@@ -6,7 +6,6 @@ import (
 	"log"
 	"pocketeer/internal/platform/database"
 	"pocketeer/internal/platform/database/models"
-	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -37,22 +36,22 @@ func TagFromModel(m *models.Tag, itemIDs, itemTypeIDs []uint) *Tag {
 	}
 
 	return &Tag{
-		ID:          m.Model.ID,
+		ID:          m.ID,
 		UserID:      m.UserID,
 		Color:       m.Color,
 		Name:        m.Name,
 		ItemIDs:     itemIDs,
 		ItemTypeIDs: itemTypeIDs,
-		CreatedAt:   m.Model.CreatedAt,
-		UpdatedAt:   m.Model.UpdatedAt,
+		CreatedAt:   m.CreatedAt,
+		UpdatedAt:   m.UpdatedAt,
 	}
 }
 
 type CreateTagRequest struct {
-	Name       string
-	Color      *string
-	TargetType *string
-	TargetId   *uint
+	Name       string  `json:"name"`
+	Color      *string `json:"color"`
+	TargetType *string `json:"target_type"`
+	TargetId   *uint   `json:"target_id"`
 }
 
 func (s *TagService) Create(ctx context.Context, auth0ID string, req CreateTagRequest) (*Tag, error) {
@@ -71,8 +70,7 @@ func (s *TagService) Create(ctx context.Context, auth0ID string, req CreateTagRe
 
 	err = s.db.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Create(&tag).Error; err != nil {
-			// QUESTION(lili-ia): Do we need unique constraint user + tag's name?
-			if strings.Contains(err.Error(), "duplicate key") || strings.Contains(err.Error(), "UNIQUE constraint failed") {
+			if errors.Is(err, gorm.ErrDuplicatedKey) {
 				return ErrTagAlreadyExists
 			}
 			return err
@@ -126,7 +124,7 @@ func (s *TagService) Get(ctx context.Context, auth0ID string, tagID uint) (*Tag,
 	var itemIDs []uint
 	err = s.db.Model(&models.Item{}).
 		Select("items.id").
-		Joins("JOIN item_to_tags itt ON itt.item_id = items.id").
+		Joins(`JOIN "item_tags" itt ON itt.item_id = items.id`).
 		Where("itt.tag_id = ?", tag.ID).
 		Pluck("items.id", &itemIDs).Error
 	if err != nil {
@@ -136,7 +134,7 @@ func (s *TagService) Get(ctx context.Context, auth0ID string, tagID uint) (*Tag,
 	var itemTypeIDs []uint
 	err = s.db.Model(&models.ItemType{}).
 		Select("item_types.id").
-		Joins("JOIN item_type_to_tags ittt ON ittt.item_type_id = item_types.id").
+		Joins(`JOIN "item_type_tags" ittt ON ittt.item_type_id = item_types.id`).
 		Where("ittt.tag_id = ?", tag.ID).
 		Pluck("item_types.id", &itemTypeIDs).Error
 	if err != nil {
@@ -168,8 +166,8 @@ func (s *TagService) GetAll(ctx context.Context, auth0ID string) ([]*Tag, error)
 }
 
 type UpdateTagRequest struct {
-	Name  *string
-	Color *string
+	Name  *string `json:"name"`
+	Color *string `json:"color"`
 }
 
 func (s *TagService) Update(ctx context.Context, auth0ID string, tagID uint, req UpdateTagRequest) (*Tag, error) {
@@ -204,8 +202,7 @@ func (s *TagService) Update(ctx context.Context, auth0ID string, tagID uint, req
 		Where("id = ? AND user_id = ?", tagID, userID).
 		Updates(updates).Error
 	if err != nil {
-		// QUESTION(lili-ia): Do we need unique constraint user + tag's name?
-		if strings.Contains(err.Error(), "duplicate key") || strings.Contains(err.Error(), "UNIQUE constraint failed") {
+		if errors.Is(err, gorm.ErrDuplicatedKey) {
 			return nil, ErrTagAlreadyExists
 		}
 		return nil, ErrDatabaseError
