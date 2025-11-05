@@ -9,10 +9,10 @@ import (
 type ItemType struct {
 	gorm.Model
 
-	Name                          string  `gorm:"size:256"`
-	Description                   *string `gorm:"size:512"`
-	BaseMeasurementUnit           string  `gorm:"size:256"`
-	DefaultDisplayMeasurementUnit string  `gorm:"size:256"`
+	Name                   string  `gorm:"size:256"`
+	Description            *string `gorm:"size:512"`
+	BaseMeasurementUnit    string  `gorm:"size:256"`
+	DisplayMeasurementUnit string  `gorm:"size:256"`
 	// HACK(noatu): using * for write as it is never null on read
 	DefaultQuantity   *float32 `gorm:"default:1"`
 	ShortageThreshold *float32
@@ -29,7 +29,7 @@ type ItemType struct {
 
 	// https://gorm.io/docs/has_many.html
 	UserID uint
-	Items  []Item `gorm:"constraint:OnDelete:CASCADE;"`
+	Items  []Item `gorm:"constraint:OnDelete:RESTRICT;"`
 
 	// https://gorm.io/docs/many_to_many.html
 	Tags []Tag `gorm:"many2many:item_type_tags;"`

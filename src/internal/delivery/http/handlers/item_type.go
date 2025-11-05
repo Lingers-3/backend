@@ -1,25 +1,12 @@
 package handlers
 
 import (
-	"errors"
-	"log"
 	"net/http"
 
 	"pocketeer/internal/app/services"
-	"pocketeer/internal/delivery/http/middleware"
 
 	"github.com/labstack/echo/v4"
-	"gorm.io/gorm"
 )
-
-// type DeleteItemTypeRequest struct {
-// 	ID uint `json:"id"`
-// }
-
-// type DeleteItemTypeResponse struct {
-// 	Hard bool `json:"hard"` // false = soft delete
-// 	// Error *uint `json:"error"`
-// }
 
 type ItemTypeHandler struct {
 	service *services.ItemTypeService
@@ -29,30 +16,112 @@ func NewItemTypeHandler(service *services.ItemTypeService) *ItemTypeHandler {
 	return &ItemTypeHandler{service}
 }
 
-// TODO(noatu): Pictures...
-func (h *ItemTypeHandler) CreateItemType(c echo.Context) error {
-	var payload services.CreateItemTypeRequest
-	if err := c.Bind(&payload); err != nil {
-		log.Printf("ERROR: parsing request body: %v", err)
-		return c.NoContent(http.StatusBadRequest)
-	}
+func (h *ItemTypeHandler) RegisterRoutes(router *echo.Group, middlewares ...echo.MiddlewareFunc) {
+	group := router.Group("item-types", middlewares...)
+	group.POST("", h.Create)
+	group.GET("", h.GetAll)
+	group.GET("/:id", h.Get)
+	group.PATCH("/:id", h.Update)
+	group.DELETE("/:id", h.Delete)
+}
 
-	// QUESTION(noatu): should authorization be checked before http request?
-	auth0ID, err := middleware.GetAuth0ID(c)
+func (h *ItemTypeHandler) Create(c echo.Context) error {
+	var payload services.ItemTypeCreateRequest
+	err := ParsePayload(c, &payload)
 	if err != nil {
-		return c.NoContent(http.StatusUnauthorized)
+		return err
 	}
 
-	_, err = h.service.CreateItemType(c.Request().Context(), auth0ID, payload)
+	auth0ID, err := GetAuth0ID(c)
 	if err != nil {
-		log.Printf("ERROR: creating item type: %v", err)
-		// HACK(noatu): TLDR: this is wrong, but no idea what is right
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return c.NoContent(http.StatusNotFound)
-		}
-		// WARN(noatu): sending full err will probably expose too much
-		return c.NoContent(http.StatusInternalServerError)
+		return err
 	}
 
-	return c.NoContent(http.StatusOK)
+	result, err := h.service.Create(c.Request().Context(), auth0ID, payload)
+	if err != nil {
+		return ServiceErrToHttp(err)
+	}
+
+	return c.JSON(http.StatusOK, result)
+}
+
+func (h *ItemTypeHandler) Get(c echo.Context) error {
+	ID, err := GetIDParam(c)
+	if err != nil {
+		return err
+	}
+
+	auth0ID, err := GetAuth0ID(c)
+	if err != nil {
+		return err
+	}
+
+	result, err := h.service.Get(c.Request().Context(), auth0ID, ID)
+	if err != nil {
+		return ServiceErrToHttp(err)
+	}
+
+	return c.JSON(http.StatusOK, result)
+}
+
+func (h *ItemTypeHandler) GetAll(c echo.Context) error {
+	auth0ID, err := GetAuth0ID(c)
+	if err != nil {
+		return err
+	}
+
+	result, err := h.service.GetAll(c.Request().Context(), auth0ID)
+	if err != nil {
+		return ServiceErrToHttp(err)
+	}
+
+	return c.JSON(http.StatusOK, result)
+}
+
+func (h *ItemTypeHandler) Update(c echo.Context) error {
+	ID, err := GetIDParam(c)
+	if err != nil {
+		return err
+	}
+
+	var payload services.ItemTypeUpdateRequest
+	err = ParsePayload(c, &payload)
+	if err != nil {
+		return err
+	}
+
+	auth0ID, err := GetAuth0ID(c)
+	if err != nil {
+		return err
+	}
+
+	result, err := h.service.Update(c.Request().Context(), auth0ID, ID, payload)
+	if err != nil {
+		return ServiceErrToHttp(err)
+	}
+
+	return c.JSON(http.StatusOK, result)
+}
+
+type ItemTypeDeleteResponse struct {
+	Hard bool `json:"hard"` // false = soft delete
+}
+
+func (h *ItemTypeHandler) Delete(c echo.Context) error {
+	ID, err := GetIDParam(c)
+	if err != nil {
+		return err
+	}
+
+	auth0ID, err := GetAuth0ID(c)
+	if err != nil {
+		return err
+	}
+
+	hard, err := h.service.Delete(c.Request().Context(), auth0ID, ID)
+	if err != nil {
+		return ServiceErrToHttp(err)
+	}
+
+	return c.JSON(http.StatusOK, ItemTypeDeleteResponse{hard})
 }
