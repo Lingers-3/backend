@@ -42,24 +42,15 @@ func (ItemType) TableName() string {
 type ItemTypeDefaults struct {
 	DefaultDisplayMeasurementUnit string
 	DefaultQuantity               float32
-	TagIDs                        []uint
 }
 
-func GetItemTypeDefaultFields(ctx context.Context, db *gorm.DB, id uint, userID uint) (model *ItemTypeDefaults, err error) {
-	model = &ItemTypeDefaults{}
+func GetItemTypeDefaultFields(ctx context.Context, db *gorm.DB, id uint, userID uint) (*ItemTypeDefaults, error) {
+	model := &ItemTypeDefaults{}
 
-	err = db.WithContext(ctx).
+	err := db.WithContext(ctx).
 		Model(&ItemType{}).
 		Where("id = ? AND user_id = ?", id, userID).
 		First(model).Error
-	if err != nil {
-		return nil, err
-	}
-
-	err = db.WithContext(ctx).
-		Table("item_type_tags").
-		Where("item_type_id = ?", id).
-		Pluck("tag_id", &model.TagIDs).Error
 	if err != nil {
 		return nil, err
 	}

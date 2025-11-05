@@ -60,7 +60,7 @@ func ItemFromModel(m *models.Item) *Item {
 	}
 }
 
-type CreateItemRequest struct {
+type ItemCreateRequest struct {
 	ItemTypeID             uint       `json:"item_type_id"`
 	Description            *string    `json:"description"`
 	Quantity               *float32   `json:"quantity"`
@@ -70,7 +70,7 @@ type CreateItemRequest struct {
 	TagIDs                 []uint     `json:"tag_ids"`
 }
 
-func (s *ItemService) Create(ctx context.Context, auth0ID string, req CreateItemRequest) (*Item, error) {
+func (s *ItemService) Create(ctx context.Context, auth0ID string, req ItemCreateRequest) (*Item, error) {
 	userID, err := GetUserIDByAuth0ID(ctx, s.db, auth0ID)
 	if err != nil {
 		return nil, err
@@ -105,26 +105,10 @@ func (s *ItemService) Create(ctx context.Context, auth0ID string, req CreateItem
 		return nil, ErrDatabaseError
 	}
 
-	// FIXME(pencelheimer): ask saloway about merge
-	// Union tags from defaults and request
-	tagIDSet := make(map[uint]struct{})
-	for _, id := range req.TagIDs {
-		tagIDSet[id] = struct{}{}
-	}
-	for _, id := range defaults.TagIDs {
-		tagIDSet[id] = struct{}{}
-	}
-
-	// Get actual IDs from map keys
-	tagIDs := make([]uint, 0, len(tagIDSet))
-	for id := range tagIDSet {
-		tagIDs = append(tagIDs, id)
-	}
-
 	var tags []models.Tag
-	if len(tagIDs) > 0 {
+	if len(req.TagIDs) > 0 {
 		err = s.db.WithContext(ctx).
-			Where("id IN ? AND user_id = ?", tagIDs, userID).
+			Where("id IN ? AND user_id = ?", req.TagIDs, userID).
 			Find(&tags).Error
 		if err != nil {
 			log.Printf("ERROR: fetching tags: %v", err)
@@ -197,8 +181,7 @@ func (s *ItemService) GetAll(ctx context.Context, auth0ID string) ([]*Item, erro
 	return responses, nil
 }
 
-type UpdateItemRequest struct {
-	ID                     uint       `json:"id"`
+type ItemUpdateRequest struct {
 	Description            *string    `json:"description"`
 	Quantity               *float32   `json:"quantity"`
 	ExpirationDate         *time.Time `json:"expiration_date"`
@@ -207,7 +190,7 @@ type UpdateItemRequest struct {
 	TagIDs                 *[]uint    `json:"tag_ids"`
 }
 
-func (s *ItemService) Update(ctx context.Context, auth0ID string, req UpdateItemRequest) (*Item, error) {
+func (s *ItemService) Update(ctx context.Context, auth0ID string, ID uint, req ItemUpdateRequest) (*Item, error) {
 	userID, err := GetUserIDByAuth0ID(ctx, s.db, auth0ID)
 	if err != nil {
 		return nil, err
@@ -217,7 +200,7 @@ func (s *ItemService) Update(ctx context.Context, auth0ID string, req UpdateItem
 	result := s.db.WithContext(ctx).
 		Preload("Tags").
 		Joins("JOIN ItemTypes ON ItemTypes.id = Items.item_type_id").
-		Where("ItemTypes.user_id = ? AND Items.id = ?", userID, req.ID).
+		Where("ItemTypes.user_id = ? AND Items.id = ?", userID, ID).
 		First(&item)
 
 	if result.Error != nil {
@@ -225,7 +208,7 @@ func (s *ItemService) Update(ctx context.Context, auth0ID string, req UpdateItem
 		return nil, ErrItemNotFound
 	}
 
-	updates := make(map[string]interface{})
+	updates := make(map[string]any)
 
 	if req.Description != nil {
 		updates["description"] = req.Description
