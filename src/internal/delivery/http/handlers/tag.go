@@ -18,9 +18,9 @@ func NewTagHandler(service *services.TagService) *TagHandler {
 }
 
 func (h *TagHandler) RegisterRoutes(router *echo.Group, middlewares ...echo.MiddlewareFunc) {
-	group := router.Group("tags", middlewares...)
-	group.POST("", h.Create)
-	group.GET("", h.GetAll)
+	group := router.Group("/tags", middlewares...)
+	group.POST("/", h.Create)
+	group.GET("/", h.GetAll)
 	group.GET("/:id", h.Get)
 	group.PATCH("/:id", h.Update)
 	group.DELETE("/:id", h.Delete)
