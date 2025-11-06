@@ -118,7 +118,10 @@ func (h *ItemTypeHandler) Delete(c echo.Context) error {
 		return err
 	}
 
-	hard, err := h.service.Delete(c.Request().Context(), auth0ID, ID)
+	forceParam := c.QueryParam("force")
+	isHardDelete := (forceParam == "true")
+
+	hard, err := h.service.Delete(c.Request().Context(), auth0ID, ID, isHardDelete)
 	if err != nil {
 		return ServiceErrToHttp(err)
 	}

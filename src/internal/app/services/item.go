@@ -87,7 +87,7 @@ func (s *ItemService) Create(ctx context.Context, auth0ID string, req ItemCreate
 		Description:            req.Description,
 		Quantity:               defaults.DefaultQuantity,
 		ExpirationDate:         req.ExpirationDate,
-		DisplayMeasurementUnit: defaults.DefaultDisplayMeasurementUnit,
+		DisplayMeasurementUnit: defaults.DisplayMeasurementUnit,
 		PurchasePrice:          req.PurchasePrice,
 	}
 
@@ -260,7 +260,7 @@ func (s *ItemService) Update(ctx context.Context, auth0ID string, ID uint, req I
 	return ItemFromModel(&item), nil
 }
 
-func (s *ItemService) Delete(ctx context.Context, auth0ID string, itemID uint) (hard bool, err error) {
+func (s *ItemService) Delete(ctx context.Context, auth0ID string, itemID uint, hard bool) (bool, error) {
 	userID, err := GetUserIDByAuth0ID(ctx, s.db, auth0ID)
 	if err != nil {
 		return false, err
@@ -269,11 +269,11 @@ func (s *ItemService) Delete(ctx context.Context, auth0ID string, itemID uint) (
 	var item models.Item
 	err = s.db.WithContext(ctx).
 		Unscoped().
-		Select("Items.id").
+		Model(&models.Item{}).
+		Select(`"Items"."id"`).
 		Joins(`JOIN "ItemTypes" ON "ItemTypes".id = "Items".item_type_id`).
 		Where(`"ItemTypes".user_id = ? AND "Items".id = ?`, userID, itemID).
 		First(&item).Error
-
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return false, ErrItemNotFound
@@ -282,20 +282,21 @@ func (s *ItemService) Delete(ctx context.Context, auth0ID string, itemID uint) (
 		return false, ErrDatabaseError
 	}
 
-	err = s.db.WithContext(ctx).Unscoped().Delete(&item).Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrForeignKeyViolated) {
-			err = s.db.WithContext(ctx).Delete(&item).Error
-			if err != nil {
-				log.Printf("ERROR: item soft delete: %v", err)
-				return false, ErrDatabaseError
-			}
-			return false, nil
+	db := s.db.WithContext(ctx)
+	if hard {
+		db = db.Unscoped()
+	}
+	result := db.Delete(&item)
+
+	if result.Error != nil {
+		if hard && errors.Is(result.Error, gorm.ErrForeignKeyViolated) {
+			log.Printf("ERROR: item hard delete violated constraint: %v", result.Error)
+			return false, ErrForeignKeyViolated
 		}
 
-		log.Printf("ERROR: item hard delete: %v", err)
+		log.Printf("ERROR: item delete: %v", result.Error)
 		return false, ErrDatabaseError
 	}
 
-	return true, nil
+	return hard, nil
 }

@@ -19,7 +19,8 @@ type Item struct {
 	ItemTypeID uint
 
 	// https://gorm.io/docs/many_to_many.html
-	Tags []Tag `gorm:"many2many:item_tags;"`
+	// NOTE(pencelheimer): CASCADE for hard delete
+	Tags []Tag `gorm:"many2many:item_tags;constraint:OnDelete:CASCADE;"`
 }
 
 func (Item) TableName() string {

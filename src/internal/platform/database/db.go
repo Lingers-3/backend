@@ -33,6 +33,7 @@ func Init(cfg *config.Config) (db *DB, err error) {
 		db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
 			// TODO(noatu): https://gorm.io/docs/gorm_config.html#NamingStrategy
 			// TODO(noatu): https://gorm.io/docs/logger.html
+			TranslateError: true,
 		})
 		if err != nil {
 			log.Printf("Error connecting to the DB: %s. Sleeping for: %s", err, sleep)

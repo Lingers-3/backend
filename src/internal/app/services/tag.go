@@ -123,20 +123,20 @@ func (s *TagService) Get(ctx context.Context, auth0ID string, tagID uint) (*Tag,
 
 	var itemIDs []uint
 	err = s.db.Model(&models.Item{}).
-		Select("items.id").
-		Joins(`JOIN "item_tags" itt ON itt.item_id = items.id`).
+		Select(`"Items".id`).
+		Joins(`JOIN "item_tags" itt ON itt.item_id = "Items".id`).
 		Where("itt.tag_id = ?", tag.ID).
-		Pluck("items.id", &itemIDs).Error
+		Pluck(`"Items".id`, &itemIDs).Error
 	if err != nil {
 		return nil, ErrDatabaseError
 	}
 
 	var itemTypeIDs []uint
 	err = s.db.Model(&models.ItemType{}).
-		Select("item_types.id").
-		Joins(`JOIN "item_type_tags" ittt ON ittt.item_type_id = item_types.id`).
+		Select(`"ItemTypes".id`).
+		Joins(`JOIN "item_type_tags" ittt ON ittt.item_type_id = "ItemTypes".id`).
 		Where("ittt.tag_id = ?", tag.ID).
-		Pluck("item_types.id", &itemTypeIDs).Error
+		Pluck(`"ItemTypes".id`, &itemTypeIDs).Error
 	if err != nil {
 		return nil, ErrDatabaseError
 	}

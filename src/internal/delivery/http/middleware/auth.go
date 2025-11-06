@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"pocketeer/internal/platform/authenticator"
-	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo-contrib/session"

@@ -32,7 +32,8 @@ type ItemType struct {
 	Items  []Item `gorm:"constraint:OnDelete:RESTRICT;"`
 
 	// https://gorm.io/docs/many_to_many.html
-	Tags []Tag `gorm:"many2many:item_type_tags;"`
+	// NOTE(pencelheimer): CASCADE for hard delete
+	Tags []Tag `gorm:"many2many:item_type_tags;constraint:OnDelete:CASCADE;"`
 }
 
 func (ItemType) TableName() string {
@@ -41,7 +42,7 @@ func (ItemType) TableName() string {
 
 type ItemTypeDefaults struct {
 	DisplayMeasurementUnit string
-	DefaultQuantity               float32
+	DefaultQuantity        float32
 }
 
 func GetItemTypeDefaultFields(ctx context.Context, db *gorm.DB, id uint, userID uint) (*ItemTypeDefaults, error) {

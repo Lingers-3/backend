@@ -10,6 +10,7 @@ import (
 	"pocketeer/internal/platform/database/models"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type ItemTypeService struct {
@@ -243,7 +244,11 @@ func (s *ItemTypeService) Update(ctx context.Context, auth0ID string, itemTypeID
 	}
 
 	if len(updates) > 0 {
-		err = s.db.WithContext(ctx).Model(&itemType).Updates(updates).Error
+		err = s.db.WithContext(ctx).
+			Model(&itemType).
+			Unscoped(). // include soft-deleted records, for restore scenarios
+			Clauses(clause.Returning{}).
+			Updates(updates).Error
 		if err != nil {
 			log.Printf("ERROR: updating item type: %v", err)
 			return nil, ErrDatabaseError
@@ -251,43 +256,44 @@ func (s *ItemTypeService) Update(ctx context.Context, auth0ID string, itemTypeID
 	}
 
 	// NOTE(noatu): see the Create function
-	var tags []models.Tag
-	if req.TagIDs != nil && len(*req.TagIDs) > 0 {
-		err = s.db.WithContext(ctx).
-			Where("id IN ? AND user_id = ?", req.TagIDs, userID).
-			Find(&tags).Error
-		if err != nil {
-			log.Printf("ERROR: fetching tags: %v", err)
-			// ignore
+	if req.TagIDs != nil {
+		var tags []models.Tag
+
+		if len(*req.TagIDs) > 0 {
+			err = s.db.WithContext(ctx).
+				Where("id IN ? AND user_id = ?", *req.TagIDs, userID).
+				Find(&tags).Error
+			if err != nil {
+				log.Printf("ERROR: fetching tags for update: %v", err)
+				// ignore
+			}
 		}
-	}
-	// Replace tags
-	if len(tags) > 0 {
-		err = s.db.WithContext(ctx).Model(itemType).Association("Tags").Replace(tags)
+
+		err = s.db.WithContext(ctx).Model(&itemType).Association("Tags").Replace(tags)
 		if err != nil {
-			log.Printf("ERROR: associating tags: %v", err)
+			log.Printf("ERROR: replacing associated tags: %v", err)
 			// ignore
 		} else {
-			itemType.Tags = tags // HACK(noatu): no need to refetch
+			itemType.Tags = tags
 		}
 	}
 
 	return ItemTypeFromModel(&itemType), nil
 }
 
-func (s *ItemTypeService) Delete(ctx context.Context, auth0ID string, itemTypeID uint) (hard bool, err error) {
+func (s *ItemTypeService) Delete(ctx context.Context, auth0ID string, itemTypeID uint, hard bool) (bool, error) {
 	userID, err := GetUserIDByAuth0ID(ctx, s.db, auth0ID)
 	if err != nil {
 		return false, err
 	}
 
-	// Verify existence and ownership
 	var itemType models.ItemType
 	err = s.db.WithContext(ctx).
-		Unscoped(). // include soft-deleted records
+		Unscoped().
 		Select("id").
 		Where("id = ? AND user_id = ?", itemTypeID, userID).
 		First(&itemType).Error
+
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return false, ErrItemTypeNotFound
@@ -296,22 +302,21 @@ func (s *ItemTypeService) Delete(ctx context.Context, auth0ID string, itemTypeID
 		return false, ErrDatabaseError
 	}
 
-	// HACK(noatu): try hard delete first and rely on RESTRICT constraint
-	err = s.db.WithContext(ctx).Unscoped().Delete(&itemType).Error
-	if err != nil {
-		// Soft Delete (more readable when nested imo)
-		if errors.Is(err, gorm.ErrForeignKeyViolated) {
-			err = s.db.WithContext(ctx).Delete(&itemType).Error
-			if err != nil {
-				log.Printf("ERROR: item type soft delete: %v", err)
-				return false, ErrDatabaseError
-			}
-			return false, nil
+	db := s.db.WithContext(ctx)
+	if hard {
+		db = db.Unscoped()
+	}
+	result := db.Delete(&itemType)
+
+	if result.Error != nil {
+		if hard && errors.Is(err, gorm.ErrForeignKeyViolated) {
+			log.Printf("ERROR: item type hard delete violated constraint: %v", result.Error)
+			return false, ErrForeignKeyViolated
 		}
 
-		log.Printf("ERROR: item type hard delete: %v", err)
+		log.Printf("ERROR: item type delete: %v", result.Error)
 		return false, ErrDatabaseError
 	}
 
-	return true, nil
+	return hard, nil
 }
