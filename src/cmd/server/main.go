@@ -55,6 +55,9 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to initialize the authenticator: %v", err)
 	}
+	itemTypeHandler := handlers.NewItemTypeHandler(services.NewItemTypeService(db))
+	itemHandler := handlers.NewItemHandler(services.NewItemService(db))
+	tagHandler := handlers.NewTagHandler(services.NewTagService(db))
 
 	e := echo.New()
 
@@ -104,8 +107,9 @@ func main() {
 	users.GET("/me", handlers.GetUserHandler(cfg), authMiddleware)
 	users.DELETE("/me", handlers.DeleteUserHandler(cfg, db), authMiddleware)
 
-	handlers.NewItemTypeHandler(services.NewItemTypeService(db)).RegisterRoutes(api, authMiddleware)
-	handlers.NewItemHandler(services.NewItemService(db)).RegisterRoutes(api, authMiddleware)
+	itemTypeHandler.RegisterRoutes(api, authMiddleware)
+	itemHandler.RegisterRoutes(api, authMiddleware)
+	tagHandler.RegisterRoutes(api, authMiddleware)
 
 	e.Logger.Fatal(e.Start(fmt.Sprintf("%s:%s", cfg.AppAddress, cfg.AppPort)))
 }

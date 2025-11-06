@@ -1,6 +1,10 @@
 package models
 
-import "gorm.io/gorm"
+import (
+	"context"
+
+	"gorm.io/gorm"
+)
 
 type ItemType struct {
 	gorm.Model
@@ -33,4 +37,23 @@ type ItemType struct {
 
 func (ItemType) TableName() string {
 	return "ItemTypes"
+}
+
+type ItemTypeDefaults struct {
+	DisplayMeasurementUnit string
+	DefaultQuantity               float32
+}
+
+func GetItemTypeDefaultFields(ctx context.Context, db *gorm.DB, id uint, userID uint) (*ItemTypeDefaults, error) {
+	model := &ItemTypeDefaults{}
+
+	err := db.WithContext(ctx).
+		Model(&ItemType{}).
+		Where("id = ? AND user_id = ?", id, userID).
+		First(model).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return model, nil
 }
