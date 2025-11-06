@@ -13,6 +13,7 @@ func Load() *Config {
 		Auth0ClientID:     os.Getenv("AUTH0_CLIENT_ID"),
 		Auth0ClientSecret: os.Getenv("AUTH0_CLIENT_SECRET"),
 		Auth0CallbackURL:  os.Getenv("AUTH0_CALLBACK_URL"),
+		Auth0Audience:     os.Getenv("AUTH0_AUDIENCE"),
 		DbHost:            os.Getenv("DB_HOST"),
 		DbUser:            os.Getenv("DB_USER"),
 		DbPassword:        os.Getenv("DB_PASSWORD"),

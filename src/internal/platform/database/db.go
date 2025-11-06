@@ -5,11 +5,11 @@ import (
 	"log"
 	"time"
 
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
-
 	"pocketeer/internal/config"
 	"pocketeer/internal/platform/database/models"
+
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 type DB = gorm.DB

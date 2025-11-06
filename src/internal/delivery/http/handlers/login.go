@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"log"
 	"net/http"
+
 	"pocketeer/internal/platform/authenticator"
 
 	"github.com/labstack/echo-contrib/session"
@@ -15,22 +16,29 @@ func LoginHandler(auth *authenticator.Authenticator) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		sess, _ := session.Get("session", c)
 
+		redirectUri := c.QueryParam("redirect_uri")
+		if redirectUri != "" {
+			sess.Values["redirect_uri"] = redirectUri
+		} else {
+			sess.Values["redirect_uri"] = "https://pocketeer.linerds.us/"
+		}
+
 		state, err := generateRandomState()
 		if err != nil {
 			log.Printf("failed to generate state: %v", err)
-			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "internal error"})
+			return redirectWithError(c, http.StatusInternalServerError, "internal server error")
 		}
 		verifier, err := generateCodeVerifier()
 		if err != nil {
 			log.Printf("failed to generate code verifier: %v", err)
-			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "internal error"})
+			return redirectWithError(c, http.StatusInternalServerError, "internal server error")
 		}
 
 		sess.Values["state"] = state
 		sess.Values["code_verifier"] = verifier
 		if err := sess.Save(c.Request(), c.Response()); err != nil {
 			log.Printf("failed to save session: %v", err)
-			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "internal error"})
+			return redirectWithError(c, http.StatusInternalServerError, "internal server error")
 		}
 
 		return c.Redirect(http.StatusTemporaryRedirect, auth.AuthCodeURLWithPKCE(state, verifier))

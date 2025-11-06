@@ -7,8 +7,8 @@ import (
 	"strconv"
 
 	"pocketeer/internal/app/services"
+	"pocketeer/internal/delivery/http/middleware"
 
-	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 )
 
@@ -26,10 +26,8 @@ func ServiceErrToHttp(err error) *echo.HTTPError {
 	}
 }
 
-// Gets auth0_id from context session
 func GetAuth0ID(c echo.Context) (string, error) {
-	sess, _ := session.Get("session", c)
-	auth0ID, ok := sess.Values["auth0_id"].(string)
+	auth0ID, ok := middleware.GetAuth0IDFromRequest(c)
 	if !ok || auth0ID == "" {
 		return "", ServiceErrToHttp(services.ErrUnauthenticated)
 	}

@@ -13,6 +13,7 @@ type Config struct {
 	Auth0ClientID     string
 	Auth0ClientSecret string
 	Auth0CallbackURL  string
+	Auth0Audience     string
 
 	DbHost     string
 	DbUser     string
