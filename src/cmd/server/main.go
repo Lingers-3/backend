@@ -101,7 +101,7 @@ func main() {
 	auth.GET("/callback", handlers.CallbackHandler(authenticator, db))
 	auth.GET("/logout", handlers.LogoutHandler(cfg))
 	auth.POST("/change-password", handlers.UpdatePasswordHandler(cfg))
-	auth.GET("/post-login", handlers.PostLoginHandler(db), authMiddleware)
+	auth.POST("/post-login", handlers.PostLoginHandler(db), authMiddleware)
 
 	users := api.Group("/users")
 	users.GET("/me", handlers.GetUserHandler(cfg), authMiddleware)
