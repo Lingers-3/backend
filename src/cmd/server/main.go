@@ -58,6 +58,7 @@ func main() {
 	itemTypeHandler := handlers.NewItemTypeHandler(services.NewItemTypeService(db))
 	itemHandler := handlers.NewItemHandler(services.NewItemService(db))
 	tagHandler := handlers.NewTagHandler(services.NewTagService(db))
+	pictureHandler := handlers.NewPictureHandler(services.NewPictureService(db))
 
 	e := echo.New()
 
@@ -110,6 +111,7 @@ func main() {
 	itemTypeHandler.RegisterRoutes(api, authMiddleware)
 	itemHandler.RegisterRoutes(api, authMiddleware)
 	tagHandler.RegisterRoutes(api, authMiddleware)
+	pictureHandler.RegisterRoutes(api, authMiddleware)
 
 	e.Logger.Fatal(e.Start(fmt.Sprintf("%s:%s", cfg.AppAddress, cfg.AppPort)))
 }
