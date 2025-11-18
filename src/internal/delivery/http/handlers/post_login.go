@@ -32,7 +32,8 @@ func PostLoginHandler(db *gorm.DB) echo.HandlerFunc {
 		}
 
 		var user models.User
-		result := db.First(&user, "auth0_id = ?", body.Sub)
+
+		result := db.Unscoped().Where("auth0_id = ?", body.Sub).First(&user)
 
 		if result.Error != nil {
 			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
@@ -40,15 +41,25 @@ func PostLoginHandler(db *gorm.DB) echo.HandlerFunc {
 					Auth0ID: body.Sub,
 					Email:   body.Email,
 				}
+
 				if err := db.Create(&user).Error; err != nil {
 					log.Printf("failed to create user: %v", err)
 					return echo.NewHTTPError(http.StatusInternalServerError)
 				}
+
 				log.Printf("New user created: %s (%s)", body.Sub, body.Email)
 
 			} else {
 				log.Printf("DB error: %v", result.Error)
 				return echo.NewHTTPError(http.StatusInternalServerError)
+			}
+		} else {
+			if user.DeletedAt.Valid {
+				if err := db.Model(&user).Update("deleted_at", nil).Error; err != nil {
+					log.Printf("failed to restore user: %v", err)
+					return echo.NewHTTPError(http.StatusInternalServerError)
+				}
+				log.Printf("Restored soft-deleted user: %s", body.Sub)
 			}
 		}
 

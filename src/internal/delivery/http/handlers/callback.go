@@ -1,21 +1,19 @@
 package handlers
 
 import (
-	"errors"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"net/url"
 
 	"pocketeer/internal/platform/authenticator"
-	"pocketeer/internal/platform/database/models"
 
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
-	"gorm.io/gorm"
 )
 
-func CallbackHandler(auth *authenticator.Authenticator, db *gorm.DB) echo.HandlerFunc {
+func CallbackHandler(auth *authenticator.Authenticator) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		sess, _ := session.Get("session", c)
 
@@ -28,8 +26,29 @@ func CallbackHandler(auth *authenticator.Authenticator, db *gorm.DB) echo.Handle
 			return redirectWithError(c, http.StatusBadRequest, "invalid code verifier")
 		}
 
-		token, err := auth.ExchangeWithPKCE(c.Request().Context(), c.QueryParam("code"), verifier)
+		if errParam := c.QueryParam("error"); errParam != "" {
+			errDesc := c.QueryParam("error_description")
+			log.Printf("Auth0 callback error: %s - %s", errParam, errDesc)
+
+			var parsed struct {
+				Error   string `json:"error"`
+				Message string `json:"message"`
+			}
+			if jErr := json.Unmarshal([]byte(errDesc), &parsed); jErr == nil {
+				return redirectWithError(c, http.StatusForbidden, parsed.Message)
+			}
+
+			return redirectWithError(c, http.StatusUnauthorized, errDesc)
+		}
+
+		code := c.QueryParam("code")
+		if code == "" {
+			return redirectWithError(c, http.StatusBadRequest, "Missing authorization code")
+		}
+
+		token, err := auth.ExchangeWithPKCE(c.Request().Context(), code, verifier)
 		if err != nil {
+			log.Printf("PKCE exchange failed: %v", err)
 			return redirectWithError(c, http.StatusUnauthorized, "PKCE verification failed")
 		}
 
@@ -43,42 +62,10 @@ func CallbackHandler(auth *authenticator.Authenticator, db *gorm.DB) echo.Handle
 			return redirectWithError(c, http.StatusInternalServerError, "internal server error")
 		}
 
-		auth0ID, ok := profile["sub"].(string)
-		if !ok {
-			return redirectWithError(c, http.StatusInternalServerError, "internal server error")
-		}
-
-		email, ok := profile["email"].(string)
-		if !ok {
-			return redirectWithError(c, http.StatusInternalServerError, "internal server error")
-		}
-
 		emailVerified, _ := profile["email_verified"].(bool)
 
 		if !emailVerified {
 			return redirectWithError(c, http.StatusForbidden, "email not verified")
-		}
-
-		var user models.User
-		// TODO(noatu): WTH pure db code is doing in an http handler?
-		result := db.First(&user, "auth0_id = ?", auth0ID)
-
-		if result.Error != nil {
-			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-				user = models.User{
-					Auth0ID: auth0ID,
-					Email:   email,
-				}
-				if err := db.Create(&user).Error; err != nil {
-					log.Printf("failed to create user: %v", err)
-					return redirectWithError(c, http.StatusInternalServerError, "internal server error")
-				}
-				log.Printf("New user created: %s (%s)", auth0ID, email)
-
-			} else {
-				log.Printf("DB error: %v", result.Error)
-				return redirectWithError(c, http.StatusInternalServerError, "internal server error")
-			}
 		}
 
 		sess.Values["access_token"] = token.AccessToken

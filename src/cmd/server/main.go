@@ -98,7 +98,7 @@ func main() {
 	authMiddleware := internal_middleware.AuthMiddleware(authenticator)
 	auth := api.Group("/auth")
 	auth.GET("/login", handlers.LoginHandler(authenticator))
-	auth.GET("/callback", handlers.CallbackHandler(authenticator, db))
+	auth.GET("/callback", handlers.CallbackHandler(authenticator))
 	auth.GET("/logout", handlers.LogoutHandler(cfg))
 	auth.POST("/change-password", handlers.UpdatePasswordHandler(cfg))
 	auth.POST("/post-login", handlers.PostLoginHandler(db), authMiddleware)
