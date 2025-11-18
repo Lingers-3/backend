@@ -29,11 +29,7 @@ func AuthMiddleware(auth *authenticator.Authenticator) echo.MiddlewareFunc {
 				}
 
 				isValid, err := auth.IsValidAccessToken(c.Request().Context(), accessToken)
-				if err != nil {
-					return echo.NewHTTPError(http.StatusInternalServerError)
-				}
-
-				if !isValid {
+				if err != nil || !isValid {
 					return echo.NewHTTPError(http.StatusUnauthorized)
 				}
 			}
