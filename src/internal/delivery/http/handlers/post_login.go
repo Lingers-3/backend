@@ -32,8 +32,7 @@ func PostLoginHandler(db *gorm.DB) echo.HandlerFunc {
 		}
 
 		var user models.User
-
-		result := db.Unscoped().Where("auth0_id = ?", body.Sub).First(&user)
+		result := db.Unscoped().Where("auth0_id = ? OR email = ?", body.Sub, body.Email).First(&user)
 
 		if result.Error != nil {
 			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
