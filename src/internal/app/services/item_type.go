@@ -121,6 +121,7 @@ type ItemTypeCreateRequest struct {
 	DisplayMeasurementUnit string   `json:"display_measurement_unit"`
 	DefaultQuantity        *float32 `json:"default_quantity"`
 	ShortageTreshold       *float32 `json:"shortage_threshold"`
+	PictureID              *uint    `json:"picture_id"`
 	TagIDs                 []uint   `json:"tag_ids"`
 }
 
@@ -138,6 +139,7 @@ func (s *ItemTypeService) Create(ctx context.Context, auth0ID string, req ItemTy
 		DisplayMeasurementUnit: req.DisplayMeasurementUnit,
 		DefaultQuantity:        req.DefaultQuantity,
 		ShortageThreshold:      req.ShortageTreshold,
+		PictureID:              req.PictureID,
 	}
 
 	result := s.db.WithContext(ctx).Create(itemType)
@@ -239,6 +241,7 @@ type ItemTypeUpdateRequest struct {
 	DisplayMeasurementUnit *string  `json:"display_measurement_unit"`
 	DefaultQuantity        *float32 `json:"default_quantity"`
 	ShortageThreshold      *float32 `json:"shortage_threshold"`
+	PictureID              *uint    `json:"picture_id"`
 	TagIDs                 *[]uint  `json:"tag_ids"`
 	Restore                *bool    `json:"restore"` // true = restore soft-deleted item
 }
@@ -282,6 +285,9 @@ func (s *ItemTypeService) Update(ctx context.Context, auth0ID string, itemTypeID
 	}
 	if req.ShortageThreshold != nil {
 		updates["shortage_threshold"] = *req.ShortageThreshold
+	}
+	if req.PictureID != nil {
+		updates["picture_id"] = *req.PictureID
 	}
 	if req.Restore != nil && *req.Restore {
 		updates["deleted_at"] = nil
