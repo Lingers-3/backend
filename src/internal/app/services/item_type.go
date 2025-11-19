@@ -70,6 +70,50 @@ func ItemTypeFromModel(m *models.ItemType) *ItemType {
 	}
 }
 
+type ItemTypeFull struct {
+	ID                     uint     `json:"id"`
+	Name                   string   `json:"name"`
+	Description            *string  `json:"description"`
+	BaseMeasurementUnit    string   `json:"base_measurement_unit"`
+	DisplayMeasurementUnit string   `json:"display_measurement_unit"`
+	DefaultQuantity        *float32 `json:"default_quantity"`
+	ShortageThreshold      *float32 `json:"shortage_threshold"`
+	PictureID              *uint    `json:"picture_id,omitempty"`
+
+	Items []ItemFull `json:"items"`
+	Tags  []Tag      `json:"tags"`
+
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+func ItemTypeFullFromModel(m *models.ItemType) *ItemTypeFull {
+	items := make([]ItemFull, len(m.Items))
+	for i, item := range m.Items {
+		items[i] = ItemFullFromModel(item)
+	}
+
+	tags := make([]Tag, len(m.Tags))
+	for i, tag := range m.Tags {
+		tags[i] = TagFromModel(tag)
+	}
+
+	return &ItemTypeFull{
+		ID:                     m.ID,
+		Name:                   m.Name,
+		Description:            m.Description,
+		BaseMeasurementUnit:    m.BaseMeasurementUnit,
+		DisplayMeasurementUnit: m.DisplayMeasurementUnit,
+		DefaultQuantity:        m.DefaultQuantity,
+		ShortageThreshold:      m.ShortageThreshold,
+		PictureID:              m.PictureID,
+		Items:                  items,
+		Tags:                   tags,
+		CreatedAt:              m.CreatedAt,
+		UpdatedAt:              m.UpdatedAt,
+	}
+}
+
 type ItemTypeCreateRequest struct {
 	Name                   string   `json:"name"`
 	Description            *string  `json:"description"`
@@ -325,4 +369,33 @@ func (s *ItemTypeService) Delete(ctx context.Context, auth0ID string, itemTypeID
 	}
 
 	return hard, nil
+}
+
+func (s *ItemTypeService) GetAllFull(ctx context.Context, auth0ID string) ([]*ItemTypeFull, error) {
+	userID, err := GetUserIDByAuth0ID(ctx, s.db, auth0ID)
+	if err != nil {
+		return nil, err
+	}
+
+	var itemTypes []models.ItemType
+
+	err = s.db.WithContext(ctx).
+		Unscoped().
+		Preload("Tags").
+		Preload("Items").
+		Preload("Items.Tags").
+		Where("user_id = ?", userID).
+		Find(&itemTypes).Error
+
+	if err != nil {
+		log.Printf("ERROR: fetching full ItemType hierarchy: %v", err)
+		return nil, ErrDatabaseError
+	}
+
+	responses := make([]*ItemTypeFull, len(itemTypes))
+	for i := range itemTypes {
+		responses[i] = ItemTypeFullFromModel(&itemTypes[i])
+	}
+
+	return responses, nil
 }
