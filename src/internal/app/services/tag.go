@@ -20,6 +20,25 @@ func NewTagService(db *database.DB) *TagService {
 }
 
 type Tag struct {
+	ID    uint    `json:"id"`
+	Name  string  `json:"name"`
+	Color *string `json:"color,omitempty"`
+
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+func TagFromModel(m models.Tag) Tag {
+	return Tag{
+		ID:        m.ID,
+		Name:      m.Name,
+		Color:     m.Color,
+		CreatedAt: m.CreatedAt,
+		UpdatedAt: m.UpdatedAt,
+	}
+}
+
+type TagFull struct {
 	ID          uint      `json:"id"`
 	UserID      uint      `json:"user_id"`
 	Color       *string   `json:"color"`
@@ -30,12 +49,12 @@ type Tag struct {
 	UpdatedAt   time.Time `json:"updated_at"`
 }
 
-func TagFromModel(m *models.Tag, itemIDs, itemTypeIDs []uint) *Tag {
+func TagFullFromModel(m *models.Tag, itemIDs, itemTypeIDs []uint) *TagFull {
 	if m == nil {
 		return nil
 	}
 
-	return &Tag{
+	return &TagFull{
 		ID:          m.ID,
 		UserID:      m.UserID,
 		Color:       m.Color,
@@ -54,7 +73,7 @@ type CreateTagRequest struct {
 	TargetId   *uint   `json:"target_id"`
 }
 
-func (s *TagService) Create(ctx context.Context, auth0ID string, req CreateTagRequest) (*Tag, error) {
+func (s *TagService) Create(ctx context.Context, auth0ID string, req CreateTagRequest) (*TagFull, error) {
 	userID, err := GetUserIDByAuth0ID(ctx, s.db, auth0ID)
 	if err != nil {
 		return nil, ErrUnauthenticated
@@ -101,10 +120,10 @@ func (s *TagService) Create(ctx context.Context, auth0ID string, req CreateTagRe
 		return nil, ErrDatabaseError
 	}
 
-	return TagFromModel(&tag, itemIDs, itemTypeIDs), nil
+	return TagFullFromModel(&tag, itemIDs, itemTypeIDs), nil
 }
 
-func (s *TagService) Get(ctx context.Context, auth0ID string, tagID uint) (*Tag, error) {
+func (s *TagService) Get(ctx context.Context, auth0ID string, tagID uint) (*TagFull, error) {
 	userID, err := GetUserIDByAuth0ID(ctx, s.db, auth0ID)
 	if err != nil {
 		return nil, ErrUnauthenticated
@@ -141,10 +160,10 @@ func (s *TagService) Get(ctx context.Context, auth0ID string, tagID uint) (*Tag,
 		return nil, ErrDatabaseError
 	}
 
-	return TagFromModel(&tag, itemIDs, itemTypeIDs), nil
+	return TagFullFromModel(&tag, itemIDs, itemTypeIDs), nil
 }
 
-func (s *TagService) GetAll(ctx context.Context, auth0ID string) ([]*Tag, error) {
+func (s *TagService) GetAll(ctx context.Context, auth0ID string) ([]*TagFull, error) {
 	userID, err := GetUserIDByAuth0ID(ctx, s.db, auth0ID)
 	if err != nil {
 		return nil, ErrUnauthenticated
@@ -157,9 +176,9 @@ func (s *TagService) GetAll(ctx context.Context, auth0ID string) ([]*Tag, error)
 		return nil, ErrDatabaseError
 	}
 
-	result := make([]*Tag, 0, len(tags))
+	result := make([]*TagFull, 0, len(tags))
 	for i := range tags {
-		result = append(result, TagFromModel(&tags[i], nil, nil))
+		result = append(result, TagFullFromModel(&tags[i], nil, nil))
 	}
 
 	return result, nil
@@ -170,13 +189,13 @@ type UpdateTagRequest struct {
 	Color *string `json:"color"`
 }
 
-func (s *TagService) Update(ctx context.Context, auth0ID string, tagID uint, req UpdateTagRequest) (*Tag, error) {
+func (s *TagService) Update(ctx context.Context, auth0ID string, tagID uint, req UpdateTagRequest) (*TagFull, error) {
 	userID, err := GetUserIDByAuth0ID(ctx, s.db, auth0ID)
 	if err != nil {
 		return nil, ErrUnauthenticated
 	}
 
-	updates := map[string]interface{}{}
+	updates := map[string]any{}
 	if req.Name != nil {
 		updates["name"] = *req.Name
 	}
@@ -194,7 +213,7 @@ func (s *TagService) Update(ctx context.Context, auth0ID string, tagID uint, req
 			}
 			return nil, ErrDatabaseError
 		}
-		return TagFromModel(&tag, nil, nil), nil
+		return TagFullFromModel(&tag, nil, nil), nil
 	}
 
 	err = s.db.WithContext(ctx).
@@ -219,7 +238,7 @@ func (s *TagService) Update(ctx context.Context, auth0ID string, tagID uint, req
 		return nil, ErrDatabaseError
 	}
 
-	return TagFromModel(&updatedTag, nil, nil), nil
+	return TagFullFromModel(&updatedTag, nil, nil), nil
 }
 
 func (s *TagService) Delete(ctx context.Context, auth0ID string, tagID uint) error {

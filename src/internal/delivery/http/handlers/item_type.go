@@ -23,6 +23,8 @@ func (h *ItemTypeHandler) RegisterRoutes(router *echo.Group, middlewares ...echo
 	group.GET("/:id", h.Get)
 	group.PATCH("/:id", h.Update)
 	group.DELETE("/:id", h.Delete)
+
+	group.GET("/full", h.GetAllFull)
 }
 
 func (h *ItemTypeHandler) Create(c echo.Context) error {
@@ -127,4 +129,18 @@ func (h *ItemTypeHandler) Delete(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, ItemTypeDeleteResponse{hard})
+}
+
+func (h *ItemTypeHandler) GetAllFull(c echo.Context) error {
+	auth0ID, err := GetAuth0ID(c)
+	if err != nil {
+		return err
+	}
+
+	result, err := h.service.GetAllFull(c.Request().Context(), auth0ID)
+	if err != nil {
+		return ServiceErrToHttp(err)
+	}
+
+	return c.JSON(http.StatusOK, result)
 }

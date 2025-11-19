@@ -60,6 +60,38 @@ func ItemFromModel(m *models.Item) *Item {
 	}
 }
 
+type ItemFull struct {
+	ID                     uint       `json:"id"`
+	Description            *string    `json:"description"`
+	Quantity               float32    `json:"quantity"`
+	ExpirationDate         *time.Time `json:"expiration_date,omitempty"`
+	DisplayMeasurementUnit string     `json:"display_measurement_unit"`
+	PurchasePrice          *float32   `json:"purchase_price,omitempty"`
+	Tags                   []Tag      `json:"tags"`
+
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+func ItemFullFromModel(m models.Item) ItemFull {
+	tags := make([]Tag, len(m.Tags))
+	for i, t := range m.Tags {
+		tags[i] = TagFromModel(t)
+	}
+
+	return ItemFull{
+		ID:                     m.ID,
+		Description:            m.Description,
+		Quantity:               m.Quantity,
+		ExpirationDate:         m.ExpirationDate,
+		DisplayMeasurementUnit: m.DisplayMeasurementUnit,
+		PurchasePrice:          m.PurchasePrice,
+		Tags:                   tags,
+		CreatedAt:              m.CreatedAt,
+		UpdatedAt:              m.UpdatedAt,
+	}
+}
+
 type ItemCreateRequest struct {
 	ItemTypeID             uint       `json:"item_type_id"`
 	Description            *string    `json:"description"`
@@ -299,4 +331,37 @@ func (s *ItemService) Delete(ctx context.Context, auth0ID string, itemID uint, h
 	}
 
 	return hard, nil
+}
+
+func (s *ItemService) GetAllFull(ctx context.Context, auth0ID string, itemTypeID *uint) ([]*ItemFull, error) {
+	userID, err := GetUserIDByAuth0ID(ctx, s.db, auth0ID)
+	if err != nil {
+		return nil, err
+	}
+
+	var items []models.Item
+
+	query := s.db.WithContext(ctx).
+		Unscoped().
+		Preload("Tags").
+		Joins("JOIN item_types ON item_types.id = items.item_type_id").
+		Where("item_types.user_id = ?", userID)
+
+	if itemTypeID != nil {
+		query = query.Where("items.item_type_id = ?", *itemTypeID)
+	}
+
+	err = query.Find(&items).Error
+	if err != nil {
+		log.Printf("ERROR: fetching Item(s) hierarchy: %v", err)
+		return nil, ErrDatabaseError
+	}
+
+	responses := make([]*ItemFull, len(items))
+	for i := range items {
+		val := ItemFullFromModel(items[i])
+		responses[i] = &val
+	}
+
+	return responses, nil
 }

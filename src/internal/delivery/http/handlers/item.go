@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"strconv"
 
 	"pocketeer/internal/app/services"
 
@@ -127,4 +128,28 @@ func (h *ItemHandler) Delete(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, ItemDeleteResponse{hard})
+}
+
+func (h *ItemHandler) GetAllFull(c echo.Context) error {
+	auth0ID, err := GetAuth0ID(c)
+	if err != nil {
+		return err
+	}
+
+	var itemTypeID *uint
+	if param := c.QueryParam("item_type_id"); param != "" {
+		id, err := strconv.ParseUint(param, 10, 32)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, "invalid item_type_id format")
+		}
+		uID := uint(id)
+		itemTypeID = &uID
+	}
+
+	result, err := h.service.GetAllFull(c.Request().Context(), auth0ID, itemTypeID)
+	if err != nil {
+		return ServiceErrToHttp(err)
+	}
+
+	return c.JSON(http.StatusOK, result)
 }
