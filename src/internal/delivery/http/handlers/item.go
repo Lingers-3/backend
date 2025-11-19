@@ -24,6 +24,8 @@ func (h *ItemHandler) RegisterRoutes(router *echo.Group, middlewares ...echo.Mid
 	group.GET("/:id", h.Get)
 	group.PATCH("/:id", h.Update)
 	group.DELETE("/:id", h.Delete)
+
+	group.GET("/full", h.GetAllFull)
 }
 
 func (h *ItemHandler) Create(c echo.Context) error {

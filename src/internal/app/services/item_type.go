@@ -81,7 +81,7 @@ type ItemTypeFull struct {
 	PictureID              *uint    `json:"picture_id,omitempty"`
 
 	Items []ItemFull `json:"items"`
-	Tags  []TagResponse  `json:"tags"`
+	Tags  []Tag      `json:"tags"`
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
@@ -93,7 +93,7 @@ func ItemTypeFullFromModel(m *models.ItemType) *ItemTypeFull {
 		items[i] = ItemFullFromModel(item)
 	}
 
-	tags := make([]TagResponse, len(m.Tags))
+	tags := make([]Tag, len(m.Tags))
 	for i, tag := range m.Tags {
 		tags[i] = TagFromModel(tag)
 	}
