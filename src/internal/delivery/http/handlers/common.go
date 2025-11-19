@@ -12,33 +12,36 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-// NOTE(noatu): spaghetti with services but it is http so should be here.
-// WARN(noatu): Keep those in the same order as the errors, OR ELSE •̀ᴖ•́
+// NOTE(noatu): all errors from service layer should be mapped explicitly.
 func ServiceErrToHttp(err error) *echo.HTTPError {
-	switch {
+	switch { // Remember to sort that!
+	case errors.Is(err, services.ErrDatabaseError):
+		return echo.NewHTTPError(http.StatusInternalServerError) // NOTE: no err
+	case errors.Is(err, services.ErrFileSystemError):
+		return echo.NewHTTPError(http.StatusInternalServerError) // NOTE: no err
+	case errors.Is(err, services.ErrForeignKeyViolated):
+		return echo.NewHTTPError(http.StatusConflict, err)
+	case errors.Is(err, services.ErrImageTooLarge):
+		return echo.NewHTTPError(http.StatusRequestEntityTooLarge, err)
+	case errors.Is(err, services.ErrInvalidImageFormat):
+		return echo.NewHTTPError(http.StatusBadRequest, err)
+	case errors.Is(err, services.ErrItemNotFound):
+		return echo.NewHTTPError(http.StatusNotFound, err)
+	case errors.Is(err, services.ErrItemTypeNotFound):
+		return echo.NewHTTPError(http.StatusNotFound, err)
+	case errors.Is(err, services.ErrNotImplemented):
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	case errors.Is(err, services.ErrPictureNotFound):
+		return echo.NewHTTPError(http.StatusNotFound, err)
+	case errors.Is(err, services.ErrTagAlreadyExists):
+		return echo.NewHTTPError(http.StatusConflict, err)
+	case errors.Is(err, services.ErrTagNotFound):
+		return echo.NewHTTPError(http.StatusNotFound, err)
 	case errors.Is(err, services.ErrUnauthenticated):
 		return echo.NewHTTPError(http.StatusUnauthorized, err)
 
-	case errors.Is(err, services.ErrForeignKeyViolated) ||
-		errors.Is(err, services.ErrTagAlreadyExists):
-		return echo.NewHTTPError(http.StatusConflict, err)
-
-	case errors.Is(err, services.ErrItemTypeNotFound) ||
-		errors.Is(err, services.ErrItemNotFound) ||
-		errors.Is(err, services.ErrTagNotFound) ||
-		errors.Is(err, services.ErrPictureNotFound):
-		return echo.NewHTTPError(http.StatusNotFound, err)
-
-	case errors.Is(err, services.ErrInvalidImageFormat):
-		return echo.NewHTTPError(http.StatusBadRequest, err)
-
-	case errors.Is(err, services.ErrImageTooLarge):
-		return echo.NewHTTPError(http.StatusRequestEntityTooLarge, err)
-
-	case errors.Is(err, services.ErrNotImplemented):
-		return echo.NewHTTPError(http.StatusInternalServerError, err)
-
-	default: // NOTE: internal errors, the error message is not passed
+	default: // Just in case
+		log.Printf("ERROR: ServiceErrToHttp unknown error: %v", err)
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 }
