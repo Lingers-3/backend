@@ -12,6 +12,15 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+// LoginHandler initiates Auth0 login flow
+// @Summary      Initiate login
+// @Description  Redirect to Auth0 login page with PKCE flow
+// @Tags         auth
+// @Produce      json
+// @Param        redirect_uri  query  string  false  "Post-login redirect URI"
+// @Success      307           "Temporary Redirect to Auth0"
+// @Failure      500           {object}  echo.HTTPError
+// @Router       /auth/login [get]
 func LoginHandler(auth *authenticator.Authenticator) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		sess, _ := session.Get("session", c)

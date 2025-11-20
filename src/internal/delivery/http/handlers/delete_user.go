@@ -14,6 +14,18 @@ import (
 	"gorm.io/gorm"
 )
 
+// DeleteUserHandler deletes the authenticated user
+// @Summary      Delete user account
+// @Description  Permanently delete the authenticated user's account from both Auth0 and the database
+// @Tags         user
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  map[string]string  "message: user deleted successfully"
+// @Failure      401  {object}  echo.HTTPError
+// @Failure      404  {object}  echo.HTTPError  "User not found"
+// @Failure      500  {object}  echo.HTTPError
+// @Router       /user [delete]
+// @Security     BearerAuth
 func DeleteUserHandler(cfg *config.Config, db *gorm.DB) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		auth0ID, ok := middleware.GetAuth0IDFromRequest(c)

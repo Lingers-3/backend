@@ -21,6 +21,18 @@ type User struct {
 	EmailVerified bool   `json:"email_verified"`
 }
 
+// GetUserHandler retrieves authenticated user information
+// @Summary      Get user profile
+// @Description  Retrieve the authenticated user's profile information from Auth0
+// @Tags         user
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  User
+// @Failure      401  {object}  echo.HTTPError
+// @Failure      403  {object}  echo.HTTPError  "Email not verified"
+// @Failure      500  {object}  echo.HTTPError
+// @Router       /user [get]
+// @Security     BearerAuth
 func GetUserHandler(cfg *config.Config) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		url := fmt.Sprintf("https://%s/userinfo", cfg.Auth0Domain)

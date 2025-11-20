@@ -1,3 +1,25 @@
+// @title           Pocketeer API
+// @version         1.0
+// @description     Inventory management system API
+// @termsOfService  https://pocketeer.linerds.us/terms
+
+// @contact.name   API Support
+// @contact.url    https://pocketeer.linerds.us/support
+// @contact.email  support@pocketeer.linerds.us
+
+// @license.name  MIT
+// @license.url   https://opensource.org/licenses/MIT
+
+// @host      api.pocketeer.linerds.us
+// @BasePath  /api/v1
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Enter your bearer token in the format: Bearer {token}
+
+// @externalDocs.description  OpenAPI Specification
+// @externalDocs.url          https://swagger.io/resources/open-api/
 package main
 
 import (

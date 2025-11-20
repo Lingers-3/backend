@@ -13,6 +13,20 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+// CallbackHandler handles Auth0 OAuth callback
+// @Summary      OAuth callback
+// @Description  Handle Auth0 OAuth2 callback with PKCE code exchange
+// @Tags         auth
+// @Produce      json
+// @Param        code   query  string  true   "Authorization code"
+// @Param        state  query  string  true   "State parameter"
+// @Param        error  query  string  false  "Error code if auth failed"
+// @Success      307    "Temporary Redirect to application"
+// @Failure      400    {object}  echo.HTTPError
+// @Failure      401    {object}  echo.HTTPError
+// @Failure      403    {object}  echo.HTTPError  "Email not verified"
+// @Failure      500    {object}  echo.HTTPError
+// @Router       /auth/callback [get]
 func CallbackHandler(auth *authenticator.Authenticator) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		sess, _ := session.Get("session", c)

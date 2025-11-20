@@ -19,6 +19,19 @@ type UpdatePasswordRequest struct {
 	NewPassword string `json:"newPassword"`
 }
 
+// UpdatePasswordHandler changes user password
+// @Summary      Update user password
+// @Description  Change the authenticated user's password via Auth0
+// @Tags         user
+// @Accept       json
+// @Produce      json
+// @Param        password  body      UpdatePasswordRequest  true  "New Password"
+// @Success      200       {object}  map[string]string      "message: password updated successfully"
+// @Failure      400       {object}  echo.HTTPError
+// @Failure      401       {object}  echo.HTTPError
+// @Failure      500       {object}  echo.HTTPError
+// @Router       /user/password [patch]
+// @Security     BearerAuth
 func UpdatePasswordHandler(cfg *config.Config) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		var pwd UpdatePasswordRequest

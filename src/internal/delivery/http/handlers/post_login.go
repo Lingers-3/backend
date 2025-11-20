@@ -11,6 +11,18 @@ import (
 	"gorm.io/gorm"
 )
 
+// PostLoginHandler handles post-login user creation/restoration
+// @Summary      Post-login callback
+// @Description  Create new user or restore soft-deleted user after Auth0 authentication
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        user  body  object{sub=string,email=string,email_verified=boolean}  true  "User Auth0 Data"
+// @Success      200   "OK"
+// @Failure      400   {object}  echo.HTTPError
+// @Failure      403   {object}  echo.HTTPError  "Email not verified"
+// @Failure      500   {object}  echo.HTTPError
+// @Router       /auth/post-login [post]
 func PostLoginHandler(db *gorm.DB) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		var body struct {
