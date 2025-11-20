@@ -1,0 +1,1014 @@
+basePath: /api/v1
+definitions:
+  delivery_http_handlers.ItemDeleteResponse:
+    properties:
+      hard:
+        description: false = soft delete
+        type: boolean
+    type: object
+  delivery_http_handlers.ItemTypeDeleteResponse:
+    properties:
+      hard:
+        description: false = soft delete
+        type: boolean
+    type: object
+  delivery_http_handlers.UpdatePasswordRequest:
+    properties:
+      newPassword:
+        description: 'TODO(noatu): why camel case?'
+        type: string
+    type: object
+  delivery_http_handlers.User:
+    properties:
+      email:
+        type: string
+      email_verified:
+        type: boolean
+      nickname:
+        type: string
+      picture:
+        type: string
+      sub:
+        type: string
+    type: object
+  echo.HTTPError:
+    properties:
+      message: {}
+    type: object
+  pocketeer_internal_app_services.CreateTagRequest:
+    properties:
+      color:
+        type: string
+      name:
+        type: string
+      target_id:
+        type: integer
+      target_type:
+        type: string
+    type: object
+  pocketeer_internal_app_services.Item:
+    properties:
+      created_at:
+        type: string
+      deleted_at:
+        type: string
+      description:
+        type: string
+      display_measurement_unit:
+        type: string
+      expiration_date:
+        type: string
+      id:
+        type: integer
+      item_type_id:
+        type: integer
+      purchase_price:
+        type: number
+      quantity:
+        type: number
+      tag_ids:
+        items:
+          type: integer
+        type: array
+      updated_at:
+        type: string
+    type: object
+  pocketeer_internal_app_services.ItemFull:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      display_measurement_unit:
+        type: string
+      expiration_date:
+        type: string
+      id:
+        type: integer
+      purchase_price:
+        type: number
+      quantity:
+        type: number
+      tags:
+        items:
+          $ref: '#/definitions/pocketeer_internal_app_services.Tag'
+        type: array
+      updated_at:
+        type: string
+    type: object
+  pocketeer_internal_app_services.ItemType:
+    properties:
+      base_measurement_unit:
+        type: string
+      created_at:
+        type: string
+      default_quantity:
+        type: number
+      deleted_at:
+        type: string
+      description:
+        type: string
+      display_measurement_unit:
+        type: string
+      id:
+        type: integer
+      item_ids:
+        items:
+          type: integer
+        type: array
+      name:
+        type: string
+      picture_id:
+        type: integer
+      shortage_threshold:
+        type: number
+      tag_ids:
+        items:
+          type: integer
+        type: array
+      updated_at:
+        type: string
+    type: object
+  pocketeer_internal_app_services.ItemTypeCreateRequest:
+    properties:
+      base_measurement_unit:
+        type: string
+      default_quantity:
+        type: number
+      description:
+        type: string
+      display_measurement_unit:
+        type: string
+      name:
+        type: string
+      shortage_threshold:
+        type: number
+      tag_ids:
+        items:
+          type: integer
+        type: array
+    type: object
+  pocketeer_internal_app_services.ItemTypeFull:
+    properties:
+      base_measurement_unit:
+        type: string
+      created_at:
+        type: string
+      default_quantity:
+        type: number
+      description:
+        type: string
+      display_measurement_unit:
+        type: string
+      id:
+        type: integer
+      items:
+        items:
+          $ref: '#/definitions/pocketeer_internal_app_services.ItemFull'
+        type: array
+      name:
+        type: string
+      picture_id:
+        type: integer
+      shortage_threshold:
+        type: number
+      tags:
+        items:
+          $ref: '#/definitions/pocketeer_internal_app_services.Tag'
+        type: array
+      updated_at:
+        type: string
+    type: object
+  pocketeer_internal_app_services.ItemUpdateRequest:
+    properties:
+      description:
+        type: string
+      display_measurement_unit:
+        type: string
+      expiration_date:
+        type: string
+      purchase_price:
+        type: number
+      quantity:
+        type: number
+      tag_ids:
+        items:
+          type: integer
+        type: array
+    type: object
+  pocketeer_internal_app_services.Tag:
+    properties:
+      color:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  pocketeer_internal_app_services.TagFull:
+    properties:
+      color:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      item_ids:
+        items:
+          type: integer
+        type: array
+      item_type_ids:
+        items:
+          type: integer
+        type: array
+      name:
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        type: integer
+    type: object
+  pocketeer_internal_app_services.UpdateTagRequest:
+    properties:
+      color:
+        type: string
+      name:
+        type: string
+    type: object
+externalDocs:
+  description: OpenAPI Specification
+  url: https://swagger.io/resources/open-api/
+host: api.pocketeer.linerds.us
+info:
+  contact:
+    email: support@pocketeer.linerds.us
+    name: API Support
+    url: https://pocketeer.linerds.us/support
+  description: Inventory management system API
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: https://pocketeer.linerds.us/terms
+  title: Pocketeer API
+  version: "1.0"
+paths:
+  /auth/callback:
+    get:
+      description: Handle Auth0 OAuth2 callback with PKCE code exchange
+      parameters:
+      - description: Authorization code
+        in: query
+        name: code
+        required: true
+        type: string
+      - description: State parameter
+        in: query
+        name: state
+        required: true
+        type: string
+      - description: Error code if auth failed
+        in: query
+        name: error
+        type: string
+      produces:
+      - application/json
+      responses:
+        "307":
+          description: Temporary Redirect to application
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "403":
+          description: Email not verified
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+      summary: OAuth callback
+      tags:
+      - auth
+  /auth/login:
+    get:
+      description: Redirect to Auth0 login page with PKCE flow
+      parameters:
+      - description: Post-login redirect URI
+        in: query
+        name: redirect_uri
+        type: string
+      produces:
+      - application/json
+      responses:
+        "307":
+          description: Temporary Redirect to Auth0
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+      summary: Initiate login
+      tags:
+      - auth
+  /auth/post-login:
+    post:
+      consumes:
+      - application/json
+      description: Create new user or restore soft-deleted user after Auth0 authentication
+      parameters:
+      - description: User Auth0 Data
+        in: body
+        name: user
+        required: true
+        schema:
+          properties:
+            email:
+              type: string
+            email_verified:
+              type: boolean
+            sub:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "403":
+          description: Email not verified
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+      summary: Post-login callback
+      tags:
+      - auth
+  /item-types:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all item types belonging to the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/pocketeer_internal_app_services.ItemType'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+      security:
+      - BearerAuth: []
+      summary: List all item types
+      tags:
+      - item-types
+    post:
+      consumes:
+      - application/json
+      description: Create a new item type with specified properties
+      parameters:
+      - description: Item Type Creation Request
+        in: body
+        name: item_type
+        required: true
+        schema:
+          $ref: '#/definitions/pocketeer_internal_app_services.ItemTypeCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pocketeer_internal_app_services.ItemType'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+      security:
+      - BearerAuth: []
+      summary: Create a new item type
+      tags:
+      - item-types
+  /item-types/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Soft or hard delete an item type. Use ?force=true for hard delete
+      parameters:
+      - description: Item Type ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Force hard delete
+        in: query
+        name: force
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/delivery_http_handlers.ItemTypeDeleteResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+      security:
+      - BearerAuth: []
+      summary: Delete item type
+      tags:
+      - item-types
+    get:
+      consumes:
+      - application/json
+      description: Retrieve detailed information about a specific item type
+      parameters:
+      - description: Item Type ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pocketeer_internal_app_services.ItemType'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+      security:
+      - BearerAuth: []
+      summary: Get item type by ID
+      tags:
+      - item-types
+  /item-types/full:
+    get:
+      consumes:
+      - application/json
+      description: Get a complete list of all item types with nested items and tags
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/pocketeer_internal_app_services.ItemTypeFull'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+      security:
+      - BearerAuth: []
+      summary: List all item types with full details
+      tags:
+      - item-types
+  /items:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all items belonging to the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/pocketeer_internal_app_services.Item'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+      security:
+      - BearerAuth: []
+      summary: List all items
+      tags:
+      - items
+  /items/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Soft or hard delete an item. Use ?force=true for hard delete
+      parameters:
+      - description: Item ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Force hard delete
+        in: query
+        name: force
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/delivery_http_handlers.ItemDeleteResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+      security:
+      - BearerAuth: []
+      summary: Delete item
+      tags:
+      - items
+    get:
+      consumes:
+      - application/json
+      description: Retrieve detailed information about a specific item
+      parameters:
+      - description: Item ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pocketeer_internal_app_services.Item'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+      security:
+      - BearerAuth: []
+      summary: Get item by ID
+      tags:
+      - items
+    patch:
+      consumes:
+      - application/json
+      description: Update properties of an existing item
+      parameters:
+      - description: Item ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Item Update Request
+        in: body
+        name: item
+        required: true
+        schema:
+          $ref: '#/definitions/pocketeer_internal_app_services.ItemUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pocketeer_internal_app_services.Item'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+      security:
+      - BearerAuth: []
+      summary: Update item
+      tags:
+      - items
+  /items/full:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of items with nested tags, optionally filtered by item
+        type
+      parameters:
+      - description: Filter by Item Type ID
+        in: query
+        name: item_type_id
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/pocketeer_internal_app_services.ItemFull'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+      security:
+      - BearerAuth: []
+      summary: List items with full details
+      tags:
+      - items
+  /tags:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all tags belonging to the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/pocketeer_internal_app_services.TagFull'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+      security:
+      - BearerAuth: []
+      summary: List all tags
+      tags:
+      - tags
+    post:
+      consumes:
+      - application/json
+      description: Create a new tag and optionally associate it with an item or item
+        type
+      parameters:
+      - description: Tag Creation Request
+        in: body
+        name: tag
+        required: true
+        schema:
+          $ref: '#/definitions/pocketeer_internal_app_services.CreateTagRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/pocketeer_internal_app_services.TagFull'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "409":
+          description: Tag already exists
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+      security:
+      - BearerAuth: []
+      summary: Create a new tag
+      tags:
+      - tags
+  /tags/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Permanently delete a tag (hard delete only)
+      parameters:
+      - description: Tag ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+      security:
+      - BearerAuth: []
+      summary: Delete tag
+      tags:
+      - tags
+    get:
+      consumes:
+      - application/json
+      description: Retrieve detailed information about a specific tag including associated
+        items and item types
+      parameters:
+      - description: Tag ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pocketeer_internal_app_services.TagFull'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+      security:
+      - BearerAuth: []
+      summary: Get tag by ID
+      tags:
+      - tags
+    patch:
+      consumes:
+      - application/json
+      description: Update properties of an existing tag
+      parameters:
+      - description: Tag ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Tag Update Request
+        in: body
+        name: tag
+        required: true
+        schema:
+          $ref: '#/definitions/pocketeer_internal_app_services.UpdateTagRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pocketeer_internal_app_services.TagFull'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "409":
+          description: Tag already exists
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+      security:
+      - BearerAuth: []
+      summary: Update tag
+      tags:
+      - tags
+  /user:
+    delete:
+      consumes:
+      - application/json
+      description: Permanently delete the authenticated user's account from both Auth0
+        and the database
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'message: user deleted successfully'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+      security:
+      - BearerAuth: []
+      summary: Delete user account
+      tags:
+      - user
+    get:
+      consumes:
+      - application/json
+      description: Retrieve the authenticated user's profile information from Auth0
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/delivery_http_handlers.User'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "403":
+          description: Email not verified
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+      security:
+      - BearerAuth: []
+      summary: Get user profile
+      tags:
+      - user
+  /user/password:
+    patch:
+      consumes:
+      - application/json
+      description: Change the authenticated user's password via Auth0
+      parameters:
+      - description: New Password
+        in: body
+        name: password
+        required: true
+        schema:
+          $ref: '#/definitions/delivery_http_handlers.UpdatePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'message: password updated successfully'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+      security:
+      - BearerAuth: []
+      summary: Update user password
+      tags:
+      - user
+securityDefinitions:
+  BearerAuth:
+    description: 'Enter your bearer token in the format: Bearer {token}'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

@@ -34,12 +34,14 @@ import (
 	internal_middleware "pocketeer/internal/delivery/http/middleware"
 	"pocketeer/internal/platform/authenticator"
 	"pocketeer/internal/platform/database"
+	_ "pocketeer/docs"
 
 	"github.com/gorilla/sessions"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/swaggo/echo-swagger"
 )
 
 func init() {
@@ -132,6 +134,8 @@ func main() {
 	itemTypeHandler.RegisterRoutes(api, authMiddleware)
 	itemHandler.RegisterRoutes(api, authMiddleware)
 	tagHandler.RegisterRoutes(api, authMiddleware)
+
+	e.GET("/swagger/*", echoSwagger.WrapHandler)
 
 	e.Logger.Fatal(e.Start(fmt.Sprintf("%s:%s", cfg.AppAddress, cfg.AppPort)))
 }
