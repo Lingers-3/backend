@@ -1,4 +1,4 @@
-basePath: /api/v1
+basePath: /api
 definitions:
   delivery_http_handlers.ItemDeleteResponse:
     properties:
@@ -141,6 +141,8 @@ definitions:
         type: string
       name:
         type: string
+      picture_id:
+        type: integer
       shortage_threshold:
         type: number
       tag_ids:
@@ -196,6 +198,17 @@ definitions:
           type: integer
         type: array
     type: object
+  pocketeer_internal_app_services.PictureInfo:
+    properties:
+      id:
+        type: integer
+      mime_type:
+        type: string
+      original_filename:
+        type: string
+      size:
+        type: integer
+    type: object
   pocketeer_internal_app_services.Tag:
     properties:
       color:
@@ -242,7 +255,7 @@ definitions:
 externalDocs:
   description: OpenAPI Specification
   url: https://swagger.io/resources/open-api/
-host: api.pocketeer.linerds.us
+host: pocketeer-api.linerds.us
 info:
   contact:
     email: support@pocketeer.linerds.us
@@ -716,6 +729,171 @@ paths:
       summary: List items with full details
       tags:
       - items
+  /pictures:
+    post:
+      consumes:
+      - multipart/form-data
+      description: 'Upload a new image file (max 10MB). Supported formats: JPEG, PNG,
+        WebP, GIF'
+      parameters:
+      - description: Image file to upload
+        in: formData
+        name: image
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/pocketeer_internal_app_services.PictureInfo'
+        "400":
+          description: Invalid file or image file required
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "413":
+          description: Image too large (max 10MB)
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "415":
+          description: Invalid image format
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+      security:
+      - BearerAuth: []
+      summary: Upload picture
+      tags:
+      - pictures
+  /pictures/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Permanently delete a picture and its file if not referenced by
+        other users
+      parameters:
+      - description: Picture ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Picture deleted successfully
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "409":
+          description: Picture is still in use
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+      security:
+      - BearerAuth: []
+      summary: Delete picture
+      tags:
+      - pictures
+    get:
+      description: Download the actual image file content
+      parameters:
+      - description: Picture ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - image/jpeg
+      - image/png
+      - image/webp
+      - image/gif
+      responses:
+        "200":
+          description: Image file
+          schema:
+            type: file
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+      security:
+      - BearerAuth: []
+      summary: Get picture file
+      tags:
+      - pictures
+  /pictures/{id}/info:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve metadata information about a picture without downloading
+        the file
+      parameters:
+      - description: Picture ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pocketeer_internal_app_services.PictureInfo'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+      security:
+      - BearerAuth: []
+      summary: Get picture metadata
+      tags:
+      - pictures
   /tags:
     get:
       consumes:

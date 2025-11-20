@@ -10,8 +10,8 @@
 // @license.name  MIT
 // @license.url   https://opensource.org/licenses/MIT
 
-// @host      api.pocketeer.linerds.us
-// @BasePath  /api/v1
+// @host      pocketeer-api.linerds.us
+// @BasePath  /api
 
 // @securityDefinitions.apikey BearerAuth
 // @in header
