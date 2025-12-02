@@ -116,14 +116,14 @@ func ItemTypeFullFromModel(m *models.ItemType) *ItemTypeFull {
 }
 
 type ItemTypeCreateRequest struct {
-	Name                   string   `json:"name"`
-	Description            *string  `json:"description"`
-	BaseMeasurementUnit    string   `json:"base_measurement_unit"`
-	DisplayMeasurementUnit string   `json:"display_measurement_unit"`
-	DefaultQuantity        *float32 `json:"default_quantity"`
-	ShortageTreshold       *float32 `json:"shortage_threshold"`
-	PictureID              *uint    `json:"picture_id"`
-	TagIDs                 []uint   `json:"tag_ids"`
+	Name                   string   `json:"name" validate:"required,max=256"`
+	Description            *string  `json:"description" validate:"omitempty,max=512"`
+	BaseMeasurementUnit    string   `json:"base_measurement_unit" validate:"required,max=256"`
+	DisplayMeasurementUnit string   `json:"display_measurement_unit" validate:"required,max=256"`
+	DefaultQuantity        *float32 `json:"default_quantity" validate:"omitempty,gte=0,lte=1000000"`
+	ShortageTreshold       *float32 `json:"shortage_threshold" validate:"omitempty,gte=0,lte=1000000"`
+	PictureID              *uint    `json:"picture_id" validate:"omitempty,gt=0"`
+	TagIDs                 []uint   `json:"tag_ids" validate:"dive,gt=0"`
 }
 
 func (s *ItemTypeService) Create(ctx context.Context, auth0ID string, req ItemTypeCreateRequest) (*ItemType, error) {
@@ -236,14 +236,14 @@ func (s *ItemTypeService) GetAll(ctx context.Context, auth0ID string) ([]*ItemTy
 }
 
 type ItemTypeUpdateRequest struct {
-	Name                   *string  `json:"name"`
-	Description            *string  `json:"description"`
-	BaseMeasurementUnit    *string  `json:"base_measurement_unit"`
-	DisplayMeasurementUnit *string  `json:"display_measurement_unit"`
-	DefaultQuantity        *float32 `json:"default_quantity"`
-	ShortageThreshold      *float32 `json:"shortage_threshold"`
-	PictureID              *uint    `json:"picture_id"`
-	TagIDs                 *[]uint  `json:"tag_ids"`
+	Name                   *string  `json:"name" validate:"omitempty,max=256"`
+	Description            *string  `json:"description" validate:"omitempty,max=512"`
+	BaseMeasurementUnit    *string  `json:"base_measurement_unit" validate:"omitempty,max=256"`
+	DisplayMeasurementUnit *string  `json:"display_measurement_unit" validate:"omitempty,max=256"`
+	DefaultQuantity        *float32 `json:"default_quantity" validate:"omitempty,gte=0,lte=1000000"`
+	ShortageThreshold      *float32 `json:"shortage_threshold" validate:"omitempty,gte=0,lte=1000000"`
+	PictureID              *uint    `json:"picture_id" validate:"omitempty,gt=0"`
+	TagIDs                 *[]uint  `json:"tag_ids" validate:"omitempty,dive,gt=0"`
 	Restore                *bool    `json:"restore"` // true = restore soft-deleted item
 }
 

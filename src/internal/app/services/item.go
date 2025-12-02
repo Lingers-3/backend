@@ -94,13 +94,13 @@ func ItemFullFromModel(m models.Item) ItemFull {
 }
 
 type ItemCreateRequest struct {
-	ItemTypeID             uint       `json:"item_type_id"`
-	Description            *string    `json:"description"`
-	Quantity               *float32   `json:"quantity"`
-	ExpirationDate         *time.Time `json:"expiration_date"`
-	DisplayMeasurementUnit *string    `json:"display_measurement_unit"`
-	PurchasePrice          *float32   `json:"purchase_price"`
-	TagIDs                 []uint     `json:"tag_ids"`
+	ItemTypeID             uint       `json:"item_type_id" validate:"required,gt=0"`
+	Description            *string    `json:"description" validate:"omitempty,max=512"`
+	Quantity               *float32   `json:"quantity" validate:"omitempty,gte=0,lte=1000000"`
+	ExpirationDate         *time.Time `json:"expiration_date" validate:"omitempty"`
+	DisplayMeasurementUnit *string    `json:"display_measurement_unit" validate:"omitempty,max=256"`
+	PurchasePrice          *float32   `json:"purchase_price" validate:"omitempty,gte=0,lte=1000000"`
+	TagIDs                 []uint     `json:"tag_ids" validate:"dive,gt=0"`
 }
 
 func (s *ItemService) Create(ctx context.Context, auth0ID string, req ItemCreateRequest) (*Item, error) {
@@ -215,12 +215,12 @@ func (s *ItemService) GetAll(ctx context.Context, auth0ID string) ([]*Item, erro
 }
 
 type ItemUpdateRequest struct {
-	Description            *string    `json:"description"`
-	Quantity               *float32   `json:"quantity"`
-	ExpirationDate         *time.Time `json:"expiration_date"`
-	DisplayMeasurementUnit *string    `json:"display_measurement_unit"`
-	PurchasePrice          *float32   `json:"purchase_price"`
-	TagIDs                 *[]uint    `json:"tag_ids"`
+	Description            *string    `json:"description" validate:"omitempty,max=512"`
+	Quantity               *float32   `json:"quantity" validate:"omitempty,gte=0,lte=1000000"`
+	ExpirationDate         *time.Time `json:"expiration_date" validate:"omitempty"`
+	DisplayMeasurementUnit *string    `json:"display_measurement_unit" validate:"omitempty,max=256"`
+	PurchasePrice          *float32   `json:"purchase_price" validate:"omitempty,gte=0,lte=1000000"`
+	TagIDs                 *[]uint    `json:"tag_ids" validate:"omitempty,dive,gt=0"`
 }
 
 func (s *ItemService) Update(ctx context.Context, auth0ID string, ID uint, req ItemUpdateRequest) (*Item, error) {
