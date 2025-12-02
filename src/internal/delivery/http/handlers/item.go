@@ -30,7 +30,7 @@ func (h *ItemHandler) RegisterRoutes(router *echo.Group, middlewares ...echo.Mid
 
 func (h *ItemHandler) Create(c echo.Context) error {
 	var payload services.ItemCreateRequest
-	err := ParsePayload(c, &payload)
+	err := ParseAndValidatePayload(c, &payload)
 	if err != nil {
 		return err
 	}
@@ -128,7 +128,7 @@ func (h *ItemHandler) Update(c echo.Context) error {
 	}
 
 	var payload services.ItemUpdateRequest
-	err = ParsePayload(c, &payload)
+	err = ParseAndValidatePayload(c, &payload)
 	if err != nil {
 		return err
 	}

@@ -42,7 +42,7 @@ func (h *ItemTypeHandler) RegisterRoutes(router *echo.Group, middlewares ...echo
 // @Security     BearerAuth
 func (h *ItemTypeHandler) Create(c echo.Context) error {
 	var payload services.ItemTypeCreateRequest
-	err := ParsePayload(c, &payload)
+	err := ParseAndValidatePayload(c, &payload)
 	if err != nil {
 		return err
 	}
@@ -136,7 +136,7 @@ func (h *ItemTypeHandler) Update(c echo.Context) error {
 	}
 
 	var payload services.ItemTypeUpdateRequest
-	err = ParsePayload(c, &payload)
+	err = ParseAndValidatePayload(c, &payload)
 	if err != nil {
 		return err
 	}

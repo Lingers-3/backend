@@ -35,6 +35,7 @@ import (
 	"pocketeer/internal/platform/authenticator"
 	"pocketeer/internal/platform/database"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/sessions"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo-contrib/session"
@@ -44,6 +45,14 @@ import (
 
 func init() {
 	gob.Register(map[string]any{})
+}
+
+type CustomValidator struct {
+	validator *validator.Validate
+}
+
+func (cv *CustomValidator) Validate(i interface{}) error {
+	return cv.validator.Struct(i)
 }
 
 func main() {
@@ -90,6 +99,8 @@ func main() {
 
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
+
+	e.Validator = &CustomValidator{validator: validator.New()}
 
 	e.HTTPErrorHandler = func(err error, c echo.Context) {
 		c.Logger().Error(err)
