@@ -1,25 +1,3 @@
-// @title           Pocketeer API
-// @version         1.0
-// @description     Inventory management system API
-// @termsOfService  https://pocketeer.linerds.us/terms
-
-// @contact.name   API Support
-// @contact.url    https://pocketeer.linerds.us/support
-// @contact.email  support@pocketeer.linerds.us
-
-// @license.name  MIT
-// @license.url   https://opensource.org/licenses/MIT
-
-// @host      pocketeer-api.linerds.us
-// @BasePath  /api
-
-// @securityDefinitions.apikey BearerAuth
-// @in header
-// @name Authorization
-// @description Enter your bearer token in the format: Bearer {token}
-
-// @externalDocs.description  OpenAPI Specification
-// @externalDocs.url          https://swagger.io/resources/open-api/
 package main
 
 import (
@@ -31,17 +9,15 @@ import (
 	"pocketeer/internal/app/services"
 	"pocketeer/internal/config"
 	"pocketeer/internal/delivery/http/handlers"
-	internal_middleware "pocketeer/internal/delivery/http/middleware"
+	internalMiddleware "pocketeer/internal/delivery/http/middleware"
 	"pocketeer/internal/platform/authenticator"
 	"pocketeer/internal/platform/database"
-	_ "pocketeer/docs"
 
 	"github.com/gorilla/sessions"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/swaggo/echo-swagger"
 )
 
 func init() {
@@ -79,10 +55,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to initialize the authenticator: %v", err)
 	}
-	itemTypeHandler := handlers.NewItemTypeHandler(services.NewItemTypeService(db))
-	itemHandler := handlers.NewItemHandler(services.NewItemService(db))
-	tagHandler := handlers.NewTagHandler(services.NewTagService(db))
-	pictureHandler := handlers.NewPictureHandler(services.NewPictureService(db))
+	userService := services.NewUserService(db)
+	itemTypeHandler := handlers.NewItemTypeHandler(services.NewItemTypeService(db, userService))
+	itemHandler := handlers.NewItemHandler(services.NewItemService(db, userService))
+	tagHandler := handlers.NewTagHandler(services.NewTagService(db, userService))
+	pictureHandler := handlers.NewPictureHandler(services.NewPictureService(db, userService))
+	userHandler := handlers.NewUserHandler(userService, cfg)
 
 	e := echo.New()
 
@@ -120,24 +98,19 @@ func main() {
 
 	api := e.Group("/api")
 
-	authMiddleware := internal_middleware.AuthMiddleware(authenticator)
+	authMiddleware := internalMiddleware.AuthMiddleware(authenticator)
 	auth := api.Group("/auth")
 	auth.GET("/login", handlers.LoginHandler(authenticator))
 	auth.GET("/callback", handlers.CallbackHandler(authenticator))
 	auth.GET("/logout", handlers.LogoutHandler(cfg))
 	auth.POST("/change-password", handlers.UpdatePasswordHandler(cfg))
-	auth.POST("/post-login", handlers.PostLoginHandler(db), authMiddleware)
-
-	users := api.Group("/users")
-	users.GET("/me", handlers.GetUserHandler(cfg), authMiddleware)
-	users.DELETE("/me", handlers.DeleteUserHandler(cfg, db), authMiddleware)
+	auth.POST("/post-login", handlers.PostLoginHandler(userService), authMiddleware)
 
 	itemTypeHandler.RegisterRoutes(api, authMiddleware)
 	itemHandler.RegisterRoutes(api, authMiddleware)
 	tagHandler.RegisterRoutes(api, authMiddleware)
 	pictureHandler.RegisterRoutes(api, authMiddleware)
-
-	e.GET("/swagger/*", echoSwagger.WrapHandler)
+	userHandler.RegisterRoutes(api, authMiddleware)
 
 	e.Logger.Fatal(e.Start(fmt.Sprintf("%s:%s", cfg.AppAddress, cfg.AppPort)))
 }

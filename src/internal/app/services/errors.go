@@ -16,4 +16,5 @@ var ( // Remember to sort that!
 	ErrTagAlreadyExists   = errors.New("tag already exists")
 	ErrTagNotFound        = errors.New("tag not found")
 	ErrUnauthenticated    = errors.New("unauthenticated, please log in (again)")
+	ErrUserNotFound       = errors.New("user not found")
 )

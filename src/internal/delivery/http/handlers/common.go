@@ -39,6 +39,8 @@ func ServiceErrToHttp(err error) *echo.HTTPError {
 		return echo.NewHTTPError(http.StatusNotFound, err)
 	case errors.Is(err, services.ErrUnauthenticated):
 		return echo.NewHTTPError(http.StatusUnauthorized, err)
+	case errors.Is(err, services.ErrUserNotFound):
+		return echo.NewHTTPError(http.StatusNotFound, err)
 
 	default: // Just in case
 		log.Printf("ERROR: ServiceErrToHttp unknown error: %v", err)

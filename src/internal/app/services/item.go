@@ -13,11 +13,12 @@ import (
 )
 
 type ItemService struct {
-	db *database.DB
+	db          *database.DB
+	userService *UserService
 }
 
-func NewItemService(db *database.DB) *ItemService {
-	return &ItemService{db}
+func NewItemService(db *database.DB, userService *UserService) *ItemService {
+	return &ItemService{db, userService}
 }
 
 type Item struct {
@@ -103,7 +104,7 @@ type ItemCreateRequest struct {
 }
 
 func (s *ItemService) Create(ctx context.Context, auth0ID string, req ItemCreateRequest) (*Item, error) {
-	userID, err := GetUserIDByAuth0ID(ctx, s.db, auth0ID)
+	userID, err := s.userService.GetUserIDByAuth0ID(ctx, auth0ID)
 	if err != nil {
 		return nil, err
 	}
@@ -162,7 +163,7 @@ func (s *ItemService) Create(ctx context.Context, auth0ID string, req ItemCreate
 }
 
 func (s *ItemService) Get(ctx context.Context, auth0ID string, itemID uint) (*Item, error) {
-	userID, err := GetUserIDByAuth0ID(ctx, s.db, auth0ID)
+	userID, err := s.userService.GetUserIDByAuth0ID(ctx, auth0ID)
 	if err != nil {
 		return nil, err
 	}
@@ -187,7 +188,7 @@ func (s *ItemService) Get(ctx context.Context, auth0ID string, itemID uint) (*It
 }
 
 func (s *ItemService) GetAll(ctx context.Context, auth0ID string) ([]*Item, error) {
-	userID, err := GetUserIDByAuth0ID(ctx, s.db, auth0ID)
+	userID, err := s.userService.GetUserIDByAuth0ID(ctx, auth0ID)
 	if err != nil {
 		return nil, err
 	}
@@ -223,7 +224,7 @@ type ItemUpdateRequest struct {
 }
 
 func (s *ItemService) Update(ctx context.Context, auth0ID string, ID uint, req ItemUpdateRequest) (*Item, error) {
-	userID, err := GetUserIDByAuth0ID(ctx, s.db, auth0ID)
+	userID, err := s.userService.GetUserIDByAuth0ID(ctx, auth0ID)
 	if err != nil {
 		return nil, err
 	}
@@ -293,7 +294,7 @@ func (s *ItemService) Update(ctx context.Context, auth0ID string, ID uint, req I
 }
 
 func (s *ItemService) Delete(ctx context.Context, auth0ID string, itemID uint, hard bool) (bool, error) {
-	userID, err := GetUserIDByAuth0ID(ctx, s.db, auth0ID)
+	userID, err := s.userService.GetUserIDByAuth0ID(ctx, auth0ID)
 	if err != nil {
 		return false, err
 	}
@@ -334,7 +335,7 @@ func (s *ItemService) Delete(ctx context.Context, auth0ID string, itemID uint, h
 }
 
 func (s *ItemService) GetAllFull(ctx context.Context, auth0ID string, itemTypeID *uint) ([]*ItemFull, error) {
-	userID, err := GetUserIDByAuth0ID(ctx, s.db, auth0ID)
+	userID, err := s.userService.GetUserIDByAuth0ID(ctx, auth0ID)
 	if err != nil {
 		return nil, err
 	}
