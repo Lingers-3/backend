@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"log"
 	"net/http"
 	"pocketeer/internal/app/services"
 	"pocketeer/internal/delivery/http/middleware"
@@ -47,9 +46,9 @@ func (h *TagHandler) Create(c echo.Context) error {
 	}
 
 	var payload services.CreateTagRequest
-	if err := c.Bind(&payload); err != nil {
-		log.Printf("Failed parsing payload: %v", err)
-		return echo.NewHTTPError(http.StatusBadRequest, "invalid payload")
+	err := ParseAndValidatePayload(c, &payload)
+	if err != nil {
+		return err
 	}
 
 	tag, err := h.service.Create(c.Request().Context(), auth0ID, payload)
@@ -146,8 +145,9 @@ func (h *TagHandler) Update(c echo.Context) error {
 	}
 
 	var payload services.UpdateTagRequest
-	if err := c.Bind(&payload); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "invalid payload")
+	err = ParseAndValidatePayload(c, &payload)
+	if err != nil {
+		return err
 	}
 
 	tag, err := h.service.Update(c.Request().Context(), auth0ID, tagID, payload)

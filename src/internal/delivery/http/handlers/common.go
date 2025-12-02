@@ -56,10 +56,13 @@ func GetAuth0ID(c echo.Context) (string, error) {
 	return auth0ID, nil
 }
 
-func ParsePayload(c echo.Context, payload any) error {
+func ParseAndValidatePayload(c echo.Context, payload any) error {
 	if err := c.Bind(payload); err != nil {
 		log.Printf("ERROR: parsing request body: %v", err)
 		return echo.NewHTTPError(http.StatusBadRequest)
+	}
+	if err := c.Validate(payload); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 	return nil
 }

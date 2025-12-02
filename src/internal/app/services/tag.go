@@ -68,10 +68,10 @@ func TagFullFromModel(m *models.Tag, itemIDs, itemTypeIDs []uint) *TagFull {
 }
 
 type CreateTagRequest struct {
-	Name       string  `json:"name"`
-	Color      *string `json:"color"`
-	TargetType *string `json:"target_type"`
-	TargetId   *uint   `json:"target_id"`
+	Name       string  `json:"name" validate:"required,max=256"`
+	Color      *string `json:"color" validate:"omitempty,len=6,hexadecimal"`
+	TargetType *string `json:"target_type" validate:"omitempty,oneof=item item_type"`
+	TargetID   *uint   `json:"target_id" validate:"omitempty,gt=0"`
 }
 
 func (s *TagService) Create(ctx context.Context, auth0ID string, req CreateTagRequest) (*TagFull, error) {
@@ -96,20 +96,20 @@ func (s *TagService) Create(ctx context.Context, auth0ID string, req CreateTagRe
 			return err
 		}
 
-		if req.TargetType != nil && req.TargetId != nil {
+		if req.TargetType != nil && req.TargetID != nil {
 			switch *req.TargetType {
 			case "item":
 				if err := tx.Model(&tag).Association("Items").
-					Append(&models.Item{Model: gorm.Model{ID: *req.TargetId}}); err != nil {
+					Append(&models.Item{Model: gorm.Model{ID: *req.TargetID}}); err != nil {
 					return err
 				}
-				itemIDs = []uint{*req.TargetId}
+				itemIDs = []uint{*req.TargetID}
 			case "item_type":
 				if err := tx.Model(&tag).Association("ItemTypes").
-					Append(&models.ItemType{Model: gorm.Model{ID: *req.TargetId}}); err != nil {
+					Append(&models.ItemType{Model: gorm.Model{ID: *req.TargetID}}); err != nil {
 					return err
 				}
-				itemTypeIDs = []uint{*req.TargetId}
+				itemTypeIDs = []uint{*req.TargetID}
 			}
 		}
 
@@ -186,8 +186,8 @@ func (s *TagService) GetAll(ctx context.Context, auth0ID string) ([]*TagFull, er
 }
 
 type UpdateTagRequest struct {
-	Name  *string `json:"name"`
-	Color *string `json:"color"`
+	Name  *string `json:"name" validate:"omitempty,max=256"`
+	Color *string `json:"color" validate:"omitempty,len=6,hexadecimal"`
 }
 
 func (s *TagService) Update(ctx context.Context, auth0ID string, tagID uint, req UpdateTagRequest) (*TagFull, error) {
