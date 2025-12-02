@@ -134,5 +134,7 @@ func main() {
 	pictureHandler.RegisterRoutes(api, authMiddleware)
 	userHandler.RegisterRoutes(api, authMiddleware)
 
+	e.GET("/swagger/*", echoSwagger.WrapHandler)
+
 	e.Logger.Fatal(e.Start(fmt.Sprintf("%s:%s", cfg.AppAddress, cfg.AppPort)))
 }
