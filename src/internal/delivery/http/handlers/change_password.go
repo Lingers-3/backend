@@ -82,13 +82,6 @@ func UpdatePasswordHandler(cfg *config.Config) echo.HandlerFunc {
 	}
 }
 
-// QUESTION(noatu): This is OAuth, not public API per se,
-// why not inline it? TokenType field seems unneeded (but what do I know?).
-type TokenResponse struct {
-	AccessToken string `json:"access_token"`
-	TokenType   string `json:"token_type"`
-}
-
 func getManagementToken(domain, clientID, clientSecret string) (string, error) {
 	url := fmt.Sprintf("https://%s/oauth/token", domain)
 
@@ -109,10 +102,15 @@ func getManagementToken(domain, clientID, clientSecret string) (string, error) {
 	}
 	defer resp.Body.Close()
 
-	var tokenRes TokenResponse
-	if err := json.NewDecoder(resp.Body).Decode(&tokenRes); err != nil {
+	var result map[string]string
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return "", err
 	}
 
-	return tokenRes.AccessToken, nil
+	token, ok := result["access_token"]
+	if !ok {
+		return "", fmt.Errorf("access_token not found in response")
+	}
+
+	return token, nil
 }
