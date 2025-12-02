@@ -12,11 +12,12 @@ import (
 )
 
 type TagService struct {
-	db *database.DB
+	db          *database.DB
+	userService *UserService
 }
 
-func NewTagService(db *database.DB) *TagService {
-	return &TagService{db}
+func NewTagService(db *database.DB, userService *UserService) *TagService {
+	return &TagService{db, userService}
 }
 
 type Tag struct {
@@ -74,7 +75,7 @@ type CreateTagRequest struct {
 }
 
 func (s *TagService) Create(ctx context.Context, auth0ID string, req CreateTagRequest) (*TagFull, error) {
-	userID, err := GetUserIDByAuth0ID(ctx, s.db, auth0ID)
+	userID, err := s.userService.GetUserIDByAuth0ID(ctx, auth0ID)
 	if err != nil {
 		return nil, ErrUnauthenticated
 	}
@@ -124,7 +125,7 @@ func (s *TagService) Create(ctx context.Context, auth0ID string, req CreateTagRe
 }
 
 func (s *TagService) Get(ctx context.Context, auth0ID string, tagID uint) (*TagFull, error) {
-	userID, err := GetUserIDByAuth0ID(ctx, s.db, auth0ID)
+	userID, err := s.userService.GetUserIDByAuth0ID(ctx, auth0ID)
 	if err != nil {
 		return nil, ErrUnauthenticated
 	}
@@ -164,7 +165,7 @@ func (s *TagService) Get(ctx context.Context, auth0ID string, tagID uint) (*TagF
 }
 
 func (s *TagService) GetAll(ctx context.Context, auth0ID string) ([]*TagFull, error) {
-	userID, err := GetUserIDByAuth0ID(ctx, s.db, auth0ID)
+	userID, err := s.userService.GetUserIDByAuth0ID(ctx, auth0ID)
 	if err != nil {
 		return nil, ErrUnauthenticated
 	}
@@ -190,7 +191,7 @@ type UpdateTagRequest struct {
 }
 
 func (s *TagService) Update(ctx context.Context, auth0ID string, tagID uint, req UpdateTagRequest) (*TagFull, error) {
-	userID, err := GetUserIDByAuth0ID(ctx, s.db, auth0ID)
+	userID, err := s.userService.GetUserIDByAuth0ID(ctx, auth0ID)
 	if err != nil {
 		return nil, ErrUnauthenticated
 	}
@@ -242,7 +243,7 @@ func (s *TagService) Update(ctx context.Context, auth0ID string, tagID uint, req
 }
 
 func (s *TagService) Delete(ctx context.Context, auth0ID string, tagID uint) error {
-	userID, err := GetUserIDByAuth0ID(ctx, s.db, auth0ID)
+	userID, err := s.userService.GetUserIDByAuth0ID(ctx, auth0ID)
 	if err != nil {
 		return ErrUnauthenticated
 	}

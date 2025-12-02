@@ -31,11 +31,12 @@ var allowedMimeTypes = map[string]string{
 }
 
 type PictureService struct {
-	db *database.DB
+	db          *database.DB
+	userService *UserService
 }
 
-func NewPictureService(db *database.DB) *PictureService {
-	return &PictureService{db}
+func NewPictureService(db *database.DB, userService *UserService) *PictureService {
+	return &PictureService{db, userService}
 }
 
 type PictureInfo struct {
@@ -56,7 +57,7 @@ func pictureInfoFromModel(m *models.Picture) *PictureInfo {
 
 func (s *PictureService) Upload(ctx context.Context, auth0ID string, fileHeader *multipart.FileHeader) (*PictureInfo, error) {
 	// Need to be authenticated to upload images, and then be authorized to delete them
-	userID, err := GetUserIDByAuth0ID(ctx, s.db, auth0ID)
+	userID, err := s.userService.GetUserIDByAuth0ID(ctx, auth0ID)
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +139,7 @@ func (s *PictureService) Upload(ctx context.Context, auth0ID string, fileHeader 
 
 // Retrieve picture metadata
 func (s *PictureService) Get(ctx context.Context, auth0ID string, pictureID uint) (*PictureInfo, error) {
-	userID, err := GetUserIDByAuth0ID(ctx, s.db, auth0ID)
+	userID, err := s.userService.GetUserIDByAuth0ID(ctx, auth0ID)
 	if err != nil {
 		return nil, err
 	}
@@ -167,7 +168,7 @@ type PictureFile struct {
 
 // Retrieves the file content with some metadata
 func (s *PictureService) GetFile(ctx context.Context, auth0ID string, pictureID uint) (*PictureFile, error) {
-	userID, err := GetUserIDByAuth0ID(ctx, s.db, auth0ID)
+	userID, err := s.userService.GetUserIDByAuth0ID(ctx, auth0ID)
 	if err != nil {
 		return nil, err
 	}
@@ -201,7 +202,7 @@ func (s *PictureService) GetFile(ctx context.Context, auth0ID string, pictureID 
 }
 
 func (s *PictureService) Delete(ctx context.Context, auth0ID string, pictureID uint) error {
-	userID, err := GetUserIDByAuth0ID(ctx, s.db, auth0ID)
+	userID, err := s.userService.GetUserIDByAuth0ID(ctx, auth0ID)
 	if err != nil {
 		return err
 	}
