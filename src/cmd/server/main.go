@@ -9,7 +9,7 @@ import (
 	"pocketeer/internal/app/services"
 	"pocketeer/internal/config"
 	"pocketeer/internal/delivery/http/handlers"
-	internal_middleware "pocketeer/internal/delivery/http/middleware"
+	internalMiddleware "pocketeer/internal/delivery/http/middleware"
 	"pocketeer/internal/platform/authenticator"
 	"pocketeer/internal/platform/database"
 
@@ -55,10 +55,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to initialize the authenticator: %v", err)
 	}
-	itemTypeHandler := handlers.NewItemTypeHandler(services.NewItemTypeService(db))
-	itemHandler := handlers.NewItemHandler(services.NewItemService(db))
-	tagHandler := handlers.NewTagHandler(services.NewTagService(db))
-	pictureHandler := handlers.NewPictureHandler(services.NewPictureService(db))
+	userService := services.NewUserService(db)
+	itemTypeHandler := handlers.NewItemTypeHandler(services.NewItemTypeService(db, userService))
+	itemHandler := handlers.NewItemHandler(services.NewItemService(db, userService))
+	tagHandler := handlers.NewTagHandler(services.NewTagService(db, userService))
+	pictureHandler := handlers.NewPictureHandler(services.NewPictureService(db, userService))
+	userHandler := handlers.NewUserHandler(userService, cfg)
 
 	e := echo.New()
 
@@ -96,22 +98,19 @@ func main() {
 
 	api := e.Group("/api")
 
-	authMiddleware := internal_middleware.AuthMiddleware(authenticator)
+	authMiddleware := internalMiddleware.AuthMiddleware(authenticator)
 	auth := api.Group("/auth")
 	auth.GET("/login", handlers.LoginHandler(authenticator))
 	auth.GET("/callback", handlers.CallbackHandler(authenticator))
 	auth.GET("/logout", handlers.LogoutHandler(cfg))
 	auth.POST("/change-password", handlers.UpdatePasswordHandler(cfg))
-	auth.POST("/post-login", handlers.PostLoginHandler(db), authMiddleware)
-
-	users := api.Group("/users")
-	users.GET("/me", handlers.GetUserHandler(cfg), authMiddleware)
-	users.DELETE("/me", handlers.DeleteUserHandler(cfg, db), authMiddleware)
+	auth.POST("/post-login", handlers.PostLoginHandler(userService), authMiddleware)
 
 	itemTypeHandler.RegisterRoutes(api, authMiddleware)
 	itemHandler.RegisterRoutes(api, authMiddleware)
 	tagHandler.RegisterRoutes(api, authMiddleware)
 	pictureHandler.RegisterRoutes(api, authMiddleware)
+	userHandler.RegisterRoutes(api, authMiddleware)
 
 	e.Logger.Fatal(e.Start(fmt.Sprintf("%s:%s", cfg.AppAddress, cfg.AppPort)))
 }

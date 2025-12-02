@@ -2,16 +2,25 @@ package handlers
 
 import (
 	"errors"
-	"log"
 	"net/http"
-
-	"pocketeer/internal/platform/database/models"
+	"pocketeer/internal/app/services"
 
 	"github.com/labstack/echo/v4"
-	"gorm.io/gorm"
 )
 
-func PostLoginHandler(db *gorm.DB) echo.HandlerFunc {
+// PostLoginHandler handles post-login user creation/restoration
+// @Summary      Post-login callback
+// @Description  Create new user or restore soft-deleted user after Auth0 authentication
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        user  body  object{sub=string,email=string,email_verified=boolean}  true  "User Auth0 Data"
+// @Success      200   "OK"
+// @Failure      400   {object}  echo.HTTPError
+// @Failure      403   {object}  echo.HTTPError  "Email not verified"
+// @Failure      500   {object}  echo.HTTPError
+// @Router       /auth/post-login [post]
+func PostLoginHandler(userService *services.UserService) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		var body struct {
 			Sub           string `json:"sub"`
@@ -31,35 +40,13 @@ func PostLoginHandler(db *gorm.DB) echo.HandlerFunc {
 			return echo.NewHTTPError(http.StatusForbidden, "email not verified")
 		}
 
-		var user models.User
-		result := db.Unscoped().Where("auth0_id = ? OR email = ?", body.Sub, body.Email).First(&user)
+		_, err := userService.EnsureActiveUser(c.Request().Context(), body.Sub, body.Email)
 
-		if result.Error != nil {
-			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-				user = models.User{
-					Auth0ID: body.Sub,
-					Email:   body.Email,
-				}
-
-				if err := db.Create(&user).Error; err != nil {
-					log.Printf("failed to create user: %v", err)
-					return echo.NewHTTPError(http.StatusInternalServerError)
-				}
-
-				log.Printf("New user created: %s (%s)", body.Sub, body.Email)
-
-			} else {
-				log.Printf("DB error: %v", result.Error)
+		if err != nil {
+			if errors.Is(err, services.ErrDatabaseError) {
 				return echo.NewHTTPError(http.StatusInternalServerError)
 			}
-		} else {
-			if user.DeletedAt.Valid {
-				if err := db.Model(&user).Update("deleted_at", nil).Error; err != nil {
-					log.Printf("failed to restore user: %v", err)
-					return echo.NewHTTPError(http.StatusInternalServerError)
-				}
-				log.Printf("Restored soft-deleted user: %s", body.Sub)
-			}
+			return echo.NewHTTPError(http.StatusInternalServerError)
 		}
 
 		return c.NoContent(http.StatusOK)
