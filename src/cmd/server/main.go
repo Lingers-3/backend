@@ -31,9 +31,10 @@ import (
 	"pocketeer/internal/app/services"
 	"pocketeer/internal/config"
 	"pocketeer/internal/delivery/http/handlers"
-	internalMiddleware "pocketeer/internal/delivery/http/middleware"
 	"pocketeer/internal/platform/authenticator"
 	"pocketeer/internal/platform/database"
+	_ "pocketeer/docs"
+	internalMiddleware "pocketeer/internal/delivery/http/middleware"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/sessions"
@@ -41,6 +42,7 @@ import (
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/swaggo/echo-swagger"
 )
 
 func init() {
@@ -51,7 +53,7 @@ type CustomValidator struct {
 	validator *validator.Validate
 }
 
-func (cv *CustomValidator) Validate(i interface{}) error {
+func (cv *CustomValidator) Validate(i any) error {
 	return cv.validator.Struct(i)
 }
 

@@ -40,11 +40,17 @@ definitions:
       color:
         type: string
       name:
+        maxLength: 256
         type: string
       target_id:
         type: integer
       target_type:
+        enum:
+        - item
+        - item_type
         type: string
+    required:
+    - name
     type: object
   pocketeer_internal_app_services.Item:
     properties:
@@ -132,23 +138,35 @@ definitions:
   pocketeer_internal_app_services.ItemTypeCreateRequest:
     properties:
       base_measurement_unit:
+        maxLength: 256
         type: string
       default_quantity:
+        maximum: 1000000
+        minimum: 0
         type: number
       description:
+        maxLength: 512
         type: string
       display_measurement_unit:
+        maxLength: 256
         type: string
       name:
+        maxLength: 256
         type: string
       picture_id:
         type: integer
       shortage_threshold:
+        maximum: 1000000
+        minimum: 0
         type: number
       tag_ids:
         items:
           type: integer
         type: array
+    required:
+    - base_measurement_unit
+    - display_measurement_unit
+    - name
     type: object
   pocketeer_internal_app_services.ItemTypeFull:
     properties:
@@ -184,14 +202,20 @@ definitions:
   pocketeer_internal_app_services.ItemUpdateRequest:
     properties:
       description:
+        maxLength: 512
         type: string
       display_measurement_unit:
+        maxLength: 256
         type: string
       expiration_date:
         type: string
       purchase_price:
+        maximum: 1000000
+        minimum: 0
         type: number
       quantity:
+        maximum: 1000000
+        minimum: 0
         type: number
       tag_ids:
         items:
@@ -250,6 +274,7 @@ definitions:
       color:
         type: string
       name:
+        maxLength: 256
         type: string
     type: object
 externalDocs:
@@ -1085,7 +1110,7 @@ paths:
       summary: Update tag
       tags:
       - tags
-  /user:
+  /user/me:
     delete:
       consumes:
       - application/json
@@ -1105,7 +1130,7 @@ paths:
           schema:
             $ref: '#/definitions/echo.HTTPError'
         "404":
-          description: User not found
+          description: user not found
           schema:
             $ref: '#/definitions/echo.HTTPError'
         "500":
