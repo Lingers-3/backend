@@ -102,7 +102,7 @@ func getManagementToken(domain, clientID, clientSecret string) (string, error) {
 	}
 	defer resp.Body.Close()
 
-	var result map[string]string
+	var result map[string]any
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return "", err
 	}
@@ -112,5 +112,5 @@ func getManagementToken(domain, clientID, clientSecret string) (string, error) {
 		return "", fmt.Errorf("access_token not found in response")
 	}
 
-	return token, nil
+	return token.(string), nil
 }
