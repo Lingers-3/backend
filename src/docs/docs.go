@@ -1285,7 +1285,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/user": {
+        "/user/me": {
             "get": {
                 "security": [
                     {
@@ -1364,7 +1364,7 @@ const docTemplate = `{
                         }
                     },
                     "404": {
-                        "description": "User not found",
+                        "description": "user not found",
                         "schema": {
                             "$ref": "#/definitions/echo.HTTPError"
                         }
@@ -1495,18 +1495,26 @@ const docTemplate = `{
         },
         "pocketeer_internal_app_services.CreateTagRequest": {
             "type": "object",
+            "required": [
+                "name"
+            ],
             "properties": {
                 "color": {
                     "type": "string"
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 256
                 },
                 "target_id": {
                     "type": "integer"
                 },
                 "target_type": {
-                    "type": "string"
+                    "type": "string",
+                    "enum": [
+                        "item",
+                        "item_type"
+                    ]
                 }
             }
         },
@@ -1638,27 +1646,40 @@ const docTemplate = `{
         },
         "pocketeer_internal_app_services.ItemTypeCreateRequest": {
             "type": "object",
+            "required": [
+                "base_measurement_unit",
+                "display_measurement_unit",
+                "name"
+            ],
             "properties": {
                 "base_measurement_unit": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 256
                 },
                 "default_quantity": {
-                    "type": "number"
+                    "type": "number",
+                    "maximum": 1000000,
+                    "minimum": 0
                 },
                 "description": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 512
                 },
                 "display_measurement_unit": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 256
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 256
                 },
                 "picture_id": {
                     "type": "integer"
                 },
                 "shortage_threshold": {
-                    "type": "number"
+                    "type": "number",
+                    "maximum": 1000000,
+                    "minimum": 0
                 },
                 "tag_ids": {
                     "type": "array",
@@ -1719,19 +1740,25 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "description": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 512
                 },
                 "display_measurement_unit": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 256
                 },
                 "expiration_date": {
                     "type": "string"
                 },
                 "purchase_price": {
-                    "type": "number"
+                    "type": "number",
+                    "maximum": 1000000,
+                    "minimum": 0
                 },
                 "quantity": {
-                    "type": "number"
+                    "type": "number",
+                    "maximum": 1000000,
+                    "minimum": 0
                 },
                 "tag_ids": {
                     "type": "array",
@@ -1820,7 +1847,8 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 256
                 }
             }
         }
