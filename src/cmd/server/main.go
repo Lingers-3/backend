@@ -28,13 +28,13 @@ import (
 	"log"
 	"net/http"
 
+	_ "pocketeer/docs"
 	"pocketeer/internal/app/services"
 	"pocketeer/internal/config"
 	"pocketeer/internal/delivery/http/handlers"
+	internalMiddleware "pocketeer/internal/delivery/http/middleware"
 	"pocketeer/internal/platform/authenticator"
 	"pocketeer/internal/platform/database"
-	_ "pocketeer/docs"
-	internalMiddleware "pocketeer/internal/delivery/http/middleware"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/sessions"
@@ -88,12 +88,20 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to initialize the authenticator: %v", err)
 	}
+
 	userService := services.NewUserService(db)
-	itemTypeHandler := handlers.NewItemTypeHandler(services.NewItemTypeService(db, userService))
-	itemHandler := handlers.NewItemHandler(services.NewItemService(db, userService))
-	tagHandler := handlers.NewTagHandler(services.NewTagService(db, userService))
-	pictureHandler := handlers.NewPictureHandler(services.NewPictureService(db, userService))
+	itemTypeService := services.NewItemTypeService(db, userService)
+	itemService := services.NewItemService(db, userService)
+	tagService := services.NewTagService(db, userService)
+	pictureService := services.NewPictureService(db, userService)
+	projectService := services.NewProjectService(db, userService, itemService)
+
 	userHandler := handlers.NewUserHandler(userService, cfg)
+	itemTypeHandler := handlers.NewItemTypeHandler(itemTypeService)
+	itemHandler := handlers.NewItemHandler(itemService)
+	tagHandler := handlers.NewTagHandler(tagService)
+	pictureHandler := handlers.NewPictureHandler(pictureService)
+	projectHandler := handlers.NewProjectHandler(projectService)
 
 	e := echo.New()
 
@@ -146,6 +154,7 @@ func main() {
 	tagHandler.RegisterRoutes(api, authMiddleware)
 	pictureHandler.RegisterRoutes(api, authMiddleware)
 	userHandler.RegisterRoutes(api, authMiddleware)
+	projectHandler.RegisterRoutes(api, authMiddleware)
 
 	e.GET("/swagger/*", echoSwagger.WrapHandler)
 

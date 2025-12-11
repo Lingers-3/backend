@@ -74,3 +74,11 @@ func GetIDParam(c echo.Context) (uint, error) {
 	}
 	return uint(id), nil
 }
+
+func GetIDParamWithName(c echo.Context, param string) (uint, error) {
+	id, err := strconv.ParseUint(c.Param(param), 10, 64)
+	if err != nil {
+		return 0, echo.NewHTTPError(http.StatusBadRequest)
+	}
+	return uint(id), nil
+}
