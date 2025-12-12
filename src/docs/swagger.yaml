@@ -327,10 +327,21 @@ definitions:
     type: object
   pocketeer_internal_app_services.ProjectCreateRequest:
     properties:
+      description:
+        maxLength: 512
+        type: string
       name:
         maxLength: 256
         minLength: 1
         type: string
+      planned_deadline:
+        type: string
+      planned_income:
+        minimum: 0
+        type: number
+      planned_work_time:
+        minimum: 0
+        type: integer
     required:
     - name
     type: object
@@ -511,6 +522,8 @@ definitions:
     - 1000000000
     - 60000000000
     - 3600000000000
+    - -9223372036854775808
+    - 9223372036854775807
     - 1
     - 1000
     - 1000000
@@ -528,6 +541,8 @@ definitions:
     - Second
     - Minute
     - Hour
+    - minDuration
+    - maxDuration
     - Nanosecond
     - Microsecond
     - Millisecond
@@ -1684,12 +1699,8 @@ paths:
       produces:
       - application/json
       responses:
-        "200":
-          description: 'message: user deleted successfully'
-          schema:
-            additionalProperties:
-              type: string
-            type: object
+        "204":
+          description: user deleted successfully
         "401":
           description: Unauthorized
           schema:

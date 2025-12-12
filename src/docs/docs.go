@@ -1847,14 +1847,8 @@ const docTemplate = `{
                 ],
                 "summary": "Delete user account",
                 "responses": {
-                    "200": {
-                        "description": "message: user deleted successfully",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
+                    "204": {
+                        "description": "user deleted successfully"
                     },
                     "401": {
                         "description": "Unauthorized",
@@ -2424,10 +2418,25 @@ const docTemplate = `{
                 "name"
             ],
             "properties": {
+                "description": {
+                    "type": "string",
+                    "maxLength": 512
+                },
                 "name": {
                     "type": "string",
                     "maxLength": 256,
                     "minLength": 1
+                },
+                "planned_deadline": {
+                    "type": "string"
+                },
+                "planned_income": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "planned_work_time": {
+                    "type": "integer",
+                    "minimum": 0
                 }
             }
         },
@@ -2691,6 +2700,8 @@ const docTemplate = `{
                 1000000000,
                 60000000000,
                 3600000000000,
+                -9223372036854775808,
+                9223372036854775807,
                 1,
                 1000,
                 1000000,
@@ -2707,6 +2718,8 @@ const docTemplate = `{
                 "Second",
                 "Minute",
                 "Hour",
+                "minDuration",
+                "maxDuration",
                 "Nanosecond",
                 "Microsecond",
                 "Millisecond",

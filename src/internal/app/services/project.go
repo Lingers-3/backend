@@ -67,11 +67,42 @@ type ProjectFull struct {
 }
 
 type ProjectCreateRequest struct {
-	Name string `json:"name" validate:"required,min=1,max=256"`
+	Name            string     `json:"name" validate:"required,min=1,max=256"`
+	Description     *string    `json:"description" validate:"omitempty,max=512"`
+	PlannedDeadline *time.Time `json:"planned_deadline" validate:"omitempty,gt=now"`
+	PlannedIncome   *float32   `json:"planned_income" validate:"omitempty,gte=0"`
+	PlannedWorkTime *int64     `json:"planned_work_time" validate:"omitempty,gte=0"`
 }
 
 func (s *ProjectService) Create(ctx context.Context, auth0ID string, req ProjectCreateRequest) (*Project, error) {
-	return nil, nil
+	userID, err := s.userService.GetUserIDByAuth0ID(ctx, auth0ID)
+	if err != nil {
+		return nil, err
+	}
+
+	var plannedWorkTime *time.Duration
+	if req.PlannedWorkTime != nil {
+		val := time.Duration(*req.PlannedWorkTime) * time.Hour
+		plannedWorkTime = &val
+	}
+
+	project := models.Project{
+		Name:   req.Name,
+		State:  models.ProjectStatePlanning,
+		UserID: userID,
+
+		Description:     req.Description,
+		PlannedDeadline: req.PlannedDeadline,
+		PlannedIncome:   req.PlannedIncome,
+		PlannedWorkTime: plannedWorkTime,
+	}
+
+	result := s.db.WithContext(ctx).Create(&project)
+	if result.Error != nil {
+		return nil, ErrDatabaseError
+	}
+
+	return ProjectFromModel(&project), nil
 }
 
 // when State == Planning
