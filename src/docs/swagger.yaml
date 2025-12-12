@@ -394,7 +394,7 @@ definitions:
         minimum: 0
         type: integer
     type: object
-  pocketeer_internal_app_services.ResourceReservationDTO:
+  pocketeer_internal_app_services.ResourceReservation:
     properties:
       id:
         type: integer
@@ -410,7 +410,7 @@ definitions:
       used_quantity:
         type: number
     type: object
-  pocketeer_internal_app_services.ResourceSpecificationDTO:
+  pocketeer_internal_app_services.ResourceSpecification:
     properties:
       id:
         type: integer
@@ -435,7 +435,7 @@ definitions:
         type: number
       reservations:
         items:
-          $ref: '#/definitions/pocketeer_internal_app_services.ResourceReservationDTO'
+          $ref: '#/definitions/pocketeer_internal_app_services.ResourceReservation'
         type: array
       resource_type:
         $ref: '#/definitions/pocketeer_internal_platform_database_models.ResourceType'
@@ -552,17 +552,10 @@ definitions:
 externalDocs:
   description: OpenAPI Specification
   url: https://swagger.io/resources/open-api/
-host: pocketeer-api.linerds.us
+host: localhost:3000
 info:
-  contact:
-    email: support@pocketeer.linerds.us
-    name: API Support
-    url: https://pocketeer.linerds.us/support
+  contact: {}
   description: Inventory management system API
-  license:
-    name: MIT
-    url: https://opensource.org/licenses/MIT
-  termsOfService: https://pocketeer.linerds.us/terms
   title: Pocketeer API
   version: "1.0"
 paths:
@@ -1401,7 +1394,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pocketeer_internal_app_services.ResourceSpecificationDTO'
+            $ref: '#/definitions/pocketeer_internal_app_services.ResourceSpecification'
       security:
       - BearerAuth: []
       summary: Add planned resource
@@ -1475,7 +1468,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pocketeer_internal_app_services.ResourceReservationDTO'
+            $ref: '#/definitions/pocketeer_internal_app_services.ResourceReservation'
       security:
       - BearerAuth: []
       summary: Update resource usage

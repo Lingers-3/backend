@@ -1,16 +1,8 @@
 // @title           Pocketeer API
 // @version         1.0
 // @description     Inventory management system API
-// @termsOfService  https://pocketeer.linerds.us/terms
 
-// @contact.name   API Support
-// @contact.url    https://pocketeer.linerds.us/support
-// @contact.email  support@pocketeer.linerds.us
-
-// @license.name  MIT
-// @license.url   https://opensource.org/licenses/MIT
-
-// @host      pocketeer-api.linerds.us
+// @host      localhost:3000
 // @BasePath  /api
 
 // @securityDefinitions.apikey BearerAuth

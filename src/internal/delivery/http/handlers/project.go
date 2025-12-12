@@ -195,7 +195,7 @@ func (h *ProjectHandler) UpdatePlan(c echo.Context) error {
 // @Tags         projects
 // @Param        id    path      int                                 true  "Project ID"
 // @Param        body  body      services.AddPlannedResourceRequest  true  "Resource Spec Request"
-// @Success      200   {object}  services.ResourceSpecificationDTO
+// @Success      200   {object}  services.ResourceSpecification
 // @Router       /projects/{id}/plan/resources [post]
 // @Security     BearerAuth
 func (h *ProjectHandler) AddPlannedResource(c echo.Context) error {
@@ -414,7 +414,7 @@ func (h *ProjectHandler) AddActiveResource(c echo.Context) error {
 // @Param        id     path      int                                  true  "Project ID"
 // @Param        resId  path      int                                  true  "Reservation ID"
 // @Param        body   body      services.UpdateResourceUsageRequest  true  "Usage Update Request"
-// @Success      200    {object}  services.ResourceReservationDTO
+// @Success      200    {object}  services.ResourceReservation
 // @Router       /projects/{id}/resources/{resId} [patch]
 // @Security     BearerAuth
 func (h *ProjectHandler) UpdateResourceUsage(c echo.Context) error {

@@ -9,16 +9,7 @@ const docTemplate = `{
     "info": {
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
-        "termsOfService": "https://pocketeer.linerds.us/terms",
-        "contact": {
-            "name": "API Support",
-            "url": "https://pocketeer.linerds.us/support",
-            "email": "support@pocketeer.linerds.us"
-        },
-        "license": {
-            "name": "MIT",
-            "url": "https://opensource.org/licenses/MIT"
-        },
+        "contact": {},
         "version": "{{.Version}}"
     },
     "host": "{{.Host}}",
@@ -1334,7 +1325,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/pocketeer_internal_app_services.ResourceSpecificationDTO"
+                            "$ref": "#/definitions/pocketeer_internal_app_services.ResourceSpecification"
                         }
                     }
                 }
@@ -1453,7 +1444,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/pocketeer_internal_app_services.ResourceReservationDTO"
+                            "$ref": "#/definitions/pocketeer_internal_app_services.ResourceReservation"
                         }
                     }
                 }
@@ -2513,7 +2504,7 @@ const docTemplate = `{
                 }
             }
         },
-        "pocketeer_internal_app_services.ResourceReservationDTO": {
+        "pocketeer_internal_app_services.ResourceReservation": {
             "type": "object",
             "properties": {
                 "id": {
@@ -2537,7 +2528,7 @@ const docTemplate = `{
                 }
             }
         },
-        "pocketeer_internal_app_services.ResourceSpecificationDTO": {
+        "pocketeer_internal_app_services.ResourceSpecification": {
             "type": "object",
             "properties": {
                 "id": {
@@ -2575,7 +2566,7 @@ const docTemplate = `{
                 "reservations": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/pocketeer_internal_app_services.ResourceReservationDTO"
+                        "$ref": "#/definitions/pocketeer_internal_app_services.ResourceReservation"
                     }
                 },
                 "resource_type": {
@@ -2746,7 +2737,7 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "pocketeer-api.linerds.us",
+	Host:             "localhost:3000",
 	BasePath:         "/api",
 	Schemes:          []string{},
 	Title:            "Pocketeer API",

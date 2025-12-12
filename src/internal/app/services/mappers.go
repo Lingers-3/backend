@@ -137,8 +137,8 @@ func ItemFullFromModel(m models.Item) ItemFull {
 	}
 }
 
-func ResourceReservationDTOFromModel(m models.ResourceReservation) ResourceReservationDTO {
-	dto := ResourceReservationDTO{
+func ResourceReservationDTOFromModel(m models.ResourceReservation) ResourceReservation {
+	dto := ResourceReservation{
 		ID:                      m.ID,
 		ItemID:                  m.ItemID,
 		ResourceSpecificationID: m.ResourceSpecificationID,
@@ -153,21 +153,25 @@ func ResourceReservationDTOFromModel(m models.ResourceReservation) ResourceReser
 	return dto
 }
 
+func ResourceSpecificationFromModel(m models.ResourceSpecification) ResourceSpecification {
+	return ResourceSpecification{
+		ID:              m.ID,
+		ItemTypeID:      m.ItemTypeID,
+		ItemTypeName:    m.ItemType.Name,
+		ResourceType:    m.ResourceType,
+		PlannedQuantity: m.PlannedQuantity,
+	}
+}
+
 func ResourceSpecificationFullFromModel(m models.ResourceSpecification) ResourceSpecificationFull {
-	reservations := make([]ResourceReservationDTO, len(m.ResourceReservations))
+	reservations := make([]ResourceReservation, len(m.ResourceReservations))
 	for i, res := range m.ResourceReservations {
 		reservations[i] = ResourceReservationDTOFromModel(res)
 	}
 
 	return ResourceSpecificationFull{
-		ResourceSpecificationDTO: ResourceSpecificationDTO{
-			ID:              m.ID,
-			ItemTypeID:      m.ItemTypeID,
-			ItemTypeName:    m.ItemType.Name,
-			ResourceType:    m.ResourceType,
-			PlannedQuantity: m.PlannedQuantity,
-		},
-		Reservations: reservations,
+		ResourceSpecification: ResourceSpecificationFromModel(m),
+		Reservations:          reservations,
 	}
 }
 

@@ -42,7 +42,7 @@ type Project struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-type ResourceSpecificationDTO struct {
+type ResourceSpecification struct {
 	ID              uint                `json:"id"`
 	ItemTypeID      uint                `json:"item_type_id"`
 	ItemTypeName    string              `json:"item_type_name"`
@@ -51,11 +51,11 @@ type ResourceSpecificationDTO struct {
 }
 
 type ResourceSpecificationFull struct {
-	ResourceSpecificationDTO
-	Reservations []ResourceReservationDTO `json:"reservations"`
+	ResourceSpecification
+	Reservations []ResourceReservation `json:"reservations"`
 }
 
-type ResourceReservationDTO struct {
+type ResourceReservation struct {
 	ID                      uint    `json:"id"`
 	ResourceSpecificationID uint    `json:"resource_specification_id"`
 	ItemID                  uint    `json:"item_id"`
@@ -174,13 +174,90 @@ type AddPlannedResourceRequest struct {
 	PlannedQuantity float32 `json:"planned_quantity" validate:"required,gt=0"`
 }
 
-func (s *ProjectService) AddPlannedResource(ctx context.Context, auth0ID string, projectID uint, req AddPlannedResourceRequest) (*ResourceSpecificationDTO, error) {
-	return nil, nil
+func (s *ProjectService) AddPlannedResource(ctx context.Context, auth0ID string, projectID uint, req AddPlannedResourceRequest) (*ResourceSpecification, error) {
+	userID, err := s.userService.GetUserIDByAuth0ID(ctx, auth0ID)
+	if err != nil {
+		return nil, err
+	}
+
+	var project models.Project
+	err = s.db.WithContext(ctx).
+		Where("id = ? AND user_id = ?", projectID, userID).
+		First(&project).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrProjectNotFound
+		}
+		return nil, ErrDatabaseError
+	}
+
+	if project.State != models.ProjectStatePlanning {
+		return nil, ErrProjectNotPlanning
+	}
+
+	var itemType models.ItemType
+	err = s.db.WithContext(ctx).
+		Where("id = ? AND user_id = ?", req.ItemTypeID, userID).
+		First(&itemType).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrItemTypeNotFound
+		}
+		return nil, ErrDatabaseError
+	}
+
+	spec := models.ResourceSpecification{
+		ProjectID:       project.ID,
+		ItemTypeID:      req.ItemTypeID,
+		ResourceType:    models.ResourceType(req.ResourceType),
+		PlannedQuantity: req.PlannedQuantity,
+	}
+	if err := s.db.WithContext(ctx).Create(&spec).Error; err != nil {
+		return nil, ErrDatabaseError
+	}
+
+	spec.ItemType = itemType
+
+	dto := ResourceSpecificationFromModel(spec)
+	return &dto, nil
 }
 
 // when State == Planning
 func (s *ProjectService) RemovePlannedResource(ctx context.Context, auth0ID string, projectID uint, specID uint) (bool, error) {
-	return false, nil
+	userID, err := s.userService.GetUserIDByAuth0ID(ctx, auth0ID)
+	if err != nil {
+		return false, err
+	}
+
+	var project models.Project
+	err = s.db.WithContext(ctx).
+		Select("id", "state").
+		Where("id = ? AND user_id = ?", projectID, userID).
+		First(&project).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return false, ErrProjectNotFound
+		}
+		return false, ErrDatabaseError
+	}
+
+	if project.State != models.ProjectStatePlanning {
+		return false, ErrProjectNotPlanning
+	}
+
+	result := s.db.WithContext(ctx).
+		Unscoped().
+		Where("id = ? AND project_id = ?", specID, project.ID).
+		Delete(&models.ResourceSpecification{})
+	if result.Error != nil {
+		return false, ErrDatabaseError
+	}
+
+	if result.RowsAffected == 0 {
+		return false, ErrResourceSpecificationNotFound
+	}
+
+	return true, nil
 }
 
 // Transition: Planning -> Active. Triggers auto-reservation.
@@ -216,7 +293,7 @@ type UpdateResourceUsageRequest struct {
 	UsedQuantity float32 `json:"used_quantity" validate:"required,gte=0"`
 }
 
-func (s *ProjectService) UpdateResourceUsage(ctx context.Context, auth0ID string, projectID uint, reservationID uint, req UpdateResourceUsageRequest) (*ResourceReservationDTO, error) {
+func (s *ProjectService) UpdateResourceUsage(ctx context.Context, auth0ID string, projectID uint, reservationID uint, req UpdateResourceUsageRequest) (*ResourceReservation, error) {
 	return nil, nil
 }
 

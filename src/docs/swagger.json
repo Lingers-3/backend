@@ -3,19 +3,10 @@
     "info": {
         "description": "Inventory management system API",
         "title": "Pocketeer API",
-        "termsOfService": "https://pocketeer.linerds.us/terms",
-        "contact": {
-            "name": "API Support",
-            "url": "https://pocketeer.linerds.us/support",
-            "email": "support@pocketeer.linerds.us"
-        },
-        "license": {
-            "name": "MIT",
-            "url": "https://opensource.org/licenses/MIT"
-        },
+        "contact": {},
         "version": "1.0"
     },
-    "host": "pocketeer-api.linerds.us",
+    "host": "localhost:3000",
     "basePath": "/api",
     "paths": {
         "/auth/callback": {
@@ -1328,7 +1319,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/pocketeer_internal_app_services.ResourceSpecificationDTO"
+                            "$ref": "#/definitions/pocketeer_internal_app_services.ResourceSpecification"
                         }
                     }
                 }
@@ -1447,7 +1438,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/pocketeer_internal_app_services.ResourceReservationDTO"
+                            "$ref": "#/definitions/pocketeer_internal_app_services.ResourceReservation"
                         }
                     }
                 }
@@ -2507,7 +2498,7 @@
                 }
             }
         },
-        "pocketeer_internal_app_services.ResourceReservationDTO": {
+        "pocketeer_internal_app_services.ResourceReservation": {
             "type": "object",
             "properties": {
                 "id": {
@@ -2531,7 +2522,7 @@
                 }
             }
         },
-        "pocketeer_internal_app_services.ResourceSpecificationDTO": {
+        "pocketeer_internal_app_services.ResourceSpecification": {
             "type": "object",
             "properties": {
                 "id": {
@@ -2569,7 +2560,7 @@
                 "reservations": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/pocketeer_internal_app_services.ResourceReservationDTO"
+                        "$ref": "#/definitions/pocketeer_internal_app_services.ResourceReservation"
                     }
                 },
                 "resource_type": {
