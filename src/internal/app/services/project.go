@@ -661,7 +661,68 @@ type CompleteProjectRequest struct {
 }
 
 func (s *ProjectService) Complete(ctx context.Context, auth0ID string, projectID uint, req CompleteProjectRequest) (*Project, error) {
-	return nil, nil
+	var project models.Project
+	tx_func := func(tx *gorm.DB) error {
+		userID, err := s.userService.GetUserIDByAuth0ID(ctx, auth0ID)
+		if err != nil {
+			return err
+		}
+
+		if err := tx.
+			Preload("ResourceReservations").
+			Preload("ResourceReservations.Item").
+			Preload("ResourceReservations.ResourceSpecification").
+			Clauses(clause.Locking{Strength: "UPDATE"}). // NOTE(pencelheimer): lock to prevent race conditions
+			Where("id = ? AND user_id = ?", projectID, userID).
+			First(&project).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrProjectNotFound
+			}
+			return ErrDatabaseError
+		}
+
+		if project.State != models.ProjectStateActive {
+			return ErrProjectNotActive
+		}
+
+		for _, reservation := range project.ResourceReservations {
+			isConsumable := reservation.ResourceSpecification.ResourceType == models.ResourceTypeConsumable
+
+			if req.FinalizeInventory && isConsumable && reservation.UsedQuantity > 0 {
+				item := reservation.Item
+				item.Quantity -= reservation.UsedQuantity
+
+				if err := tx.Save(&item).Error; err != nil {
+					return ErrDatabaseError
+				}
+			}
+
+			if err := tx.Delete(&reservation).Error; err != nil {
+				return ErrDatabaseError
+			}
+		}
+
+		now := time.Now()
+		project.State = models.ProjectStateCompleted
+		project.FinishedAt = &now
+
+		if req.ActualRevenue != nil {
+			project.ActualIncome = req.ActualRevenue
+		}
+
+		if err := tx.Save(&project).Error; err != nil {
+			return ErrDatabaseError
+		}
+
+		return nil
+	}
+	err := s.db.WithContext(ctx).Transaction(tx_func)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return ProjectFromModel(&project), nil
 }
 
 func (s *ProjectService) Get(ctx context.Context, auth0ID string, projectID uint) (*ProjectFull, error) {
