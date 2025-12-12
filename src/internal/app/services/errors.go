@@ -10,6 +10,7 @@ var (
 	ErrForeignKeyViolated            = errors.New("resource is still in use")
 	ErrImageTooLarge                 = errors.New("image is too large")
 	ErrInvalidImageFormat            = errors.New("invalid image format")
+	ErrInvalidQuantity               = errors.New("used quantity cannot exceed reserved quantity")
 	ErrItemNotFound                  = errors.New("item not found")
 	ErrItemTypeNotFound              = errors.New("item type not found")
 	ErrNotImplemented                = errors.New("method is not yet implemented")

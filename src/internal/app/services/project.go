@@ -422,7 +422,123 @@ type AddActiveResourceRequest struct {
 }
 
 func (s *ProjectService) AddActiveResource(ctx context.Context, auth0ID string, projectID uint, req AddActiveResourceRequest) (*ProjectFull, error) {
-	return nil, nil
+	if req.UsedQuantity > req.ReservedQuantity {
+		return nil, ErrInvalidQuantity
+	}
+
+	tx_func := func(tx *gorm.DB) error {
+		userID, err := s.userService.GetUserIDByAuth0ID(ctx, auth0ID)
+		if err != nil {
+			return err
+		}
+
+		var project models.Project
+
+		// NOTE(pencelheimer): lock to prevent race conditions
+		err = tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			Where("id = ? AND user_id = ?", projectID, userID).
+			First(&project).Error
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrProjectNotFound
+			}
+			return ErrDatabaseError
+		}
+
+		if project.State != models.ProjectStateActive {
+			return ErrProjectNotActive
+		}
+
+		var itemType models.ItemType
+		if err := tx.Where("id = ? AND user_id = ?", req.ItemTypeID, userID).First(&itemType).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrItemTypeNotFound
+			}
+			return ErrDatabaseError
+		}
+
+		spec := models.ResourceSpecification{
+			ProjectID:       project.ID,
+			ItemTypeID:      req.ItemTypeID,
+			ResourceType:    models.ResourceType(req.ResourceType),
+			PlannedQuantity: 0, // NOTE(pencelheimer): unplanned resource
+		}
+
+		if err := tx.Create(&spec).Error; err != nil {
+			return ErrDatabaseError
+		}
+
+		remainingToReserve := req.ReservedQuantity
+		remainingToUse := req.UsedQuantity
+
+		var items []models.Item
+		if err := tx.
+			Where("item_type_id = ?", req.ItemTypeID).
+			Order("expiration_date ASC NULLS LAST, id ASC").
+			Find(&items).Error; err != nil {
+			return ErrDatabaseError
+		}
+
+		for _, item := range items {
+			if remainingToReserve <= 0 {
+				break
+			}
+
+			var reservedSum float32
+			if err := tx.Model(&models.ResourceReservation{}).
+				Where("item_id = ?", item.ID).
+				Select("COALESCE(SUM(reserved_quantity), 0)").
+				Scan(&reservedSum).Error; err != nil {
+				return ErrDatabaseError
+			}
+
+			available := item.Quantity - reservedSum
+			if available <= 0 {
+				continue
+			}
+
+			amountToReserve := remainingToReserve
+			if available < remainingToReserve {
+				amountToReserve = available
+			}
+
+			amountToUse := float32(0)
+			if remainingToUse > 0 {
+				if amountToReserve >= remainingToUse {
+					amountToUse = remainingToUse
+				} else {
+					amountToUse = amountToReserve
+				}
+			}
+
+			reservation := models.ResourceReservation{
+				ProjectID:               project.ID,
+				ItemID:                  item.ID,
+				ResourceSpecificationID: spec.ID,
+				ReservedQuantity:        amountToReserve,
+				UsedQuantity:            amountToUse,
+			}
+
+			if err := tx.Create(&reservation).Error; err != nil {
+				return ErrDatabaseError
+			}
+
+			remainingToReserve -= amountToReserve
+			remainingToUse -= amountToUse
+		}
+
+		// NOTE(pencelheimer): remainingToUse > 0 after the loop means, that user have used more resources than available
+		// maybe we should do something about it?
+
+		return nil
+	}
+	err := s.db.WithContext(ctx).Transaction(tx_func)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return s.Get(ctx, auth0ID, projectID)
 }
 
 // when State == Active
