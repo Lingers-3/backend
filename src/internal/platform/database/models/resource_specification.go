@@ -23,6 +23,9 @@ type ResourceSpecification struct {
 
 	ItemTypeID uint     `gorm:"not null"`
 	ItemType   ItemType `gorm:"constraint:OnDelete:RESTRICT;"`
+
+	// https://gorm.io/docs/has_many.html
+	ResourceReservations []ResourceReservation `gorm:"foreignKey:ResourceSpecificationID"`
 }
 
 func (ResourceSpecification) TableName() string {

@@ -13,6 +13,12 @@ type ResourceReservation struct {
 	ProjectID uint `gorm:"not null"`
 	Project   Project
 
+	// https://gorm.io/docs/has_many.html
+	ResourceSpecificationID uint `gorm:"not null"`
+
+	// https://gorm.io/docs/belongs_to.html
+	ResourceSpecification ResourceSpecification `gorm:"constraint:OnDelete:RESTRICT;"`
+
 	ItemID uint `gorm:"not null"`
 	Item   Item `gorm:"constraint:OnDelete:RESTRICT;"`
 }

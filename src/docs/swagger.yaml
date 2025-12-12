@@ -358,13 +358,9 @@ definitions:
         type: number
       planned_work_time:
         $ref: '#/definitions/time.Duration'
-      reservations:
-        items:
-          $ref: '#/definitions/pocketeer_internal_app_services.ResourceReservationDTO'
-        type: array
       specifications:
         items:
-          $ref: '#/definitions/pocketeer_internal_app_services.ResourceSpecificationDTO'
+          $ref: '#/definitions/pocketeer_internal_app_services.ResourceSpecificationFull'
         type: array
       started_at:
         type: string
@@ -398,6 +394,8 @@ definitions:
         type: integer
       reserved_quantity:
         type: number
+      resource_specification_id:
+        type: integer
       used_quantity:
         type: number
     type: object
@@ -411,6 +409,23 @@ definitions:
         type: string
       planned_quantity:
         type: number
+      resource_type:
+        $ref: '#/definitions/pocketeer_internal_platform_database_models.ResourceType'
+    type: object
+  pocketeer_internal_app_services.ResourceSpecificationFull:
+    properties:
+      id:
+        type: integer
+      item_type_id:
+        type: integer
+      item_type_name:
+        type: string
+      planned_quantity:
+        type: number
+      reservations:
+        items:
+          $ref: '#/definitions/pocketeer_internal_app_services.ResourceReservationDTO'
+        type: array
       resource_type:
         $ref: '#/definitions/pocketeer_internal_platform_database_models.ResourceType'
     type: object
@@ -488,6 +503,8 @@ definitions:
     - ResourceTypeInstrument
   time.Duration:
     enum:
+    - -9223372036854775808
+    - 9223372036854775807
     - 1
     - 1000
     - 1000000
@@ -503,6 +520,8 @@ definitions:
     format: int64
     type: integer
     x-enum-varnames:
+    - minDuration
+    - maxDuration
     - Nanosecond
     - Microsecond
     - Millisecond

@@ -2467,16 +2467,10 @@ const docTemplate = `{
                 "planned_work_time": {
                     "$ref": "#/definitions/time.Duration"
                 },
-                "reservations": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pocketeer_internal_app_services.ResourceReservationDTO"
-                    }
-                },
                 "specifications": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/pocketeer_internal_app_services.ResourceSpecificationDTO"
+                        "$ref": "#/definitions/pocketeer_internal_app_services.ResourceSpecificationFull"
                     }
                 },
                 "started_at": {
@@ -2526,6 +2520,9 @@ const docTemplate = `{
                 "reserved_quantity": {
                     "type": "number"
                 },
+                "resource_specification_id": {
+                    "type": "integer"
+                },
                 "used_quantity": {
                     "type": "number"
                 }
@@ -2545,6 +2542,32 @@ const docTemplate = `{
                 },
                 "planned_quantity": {
                     "type": "number"
+                },
+                "resource_type": {
+                    "$ref": "#/definitions/pocketeer_internal_platform_database_models.ResourceType"
+                }
+            }
+        },
+        "pocketeer_internal_app_services.ResourceSpecificationFull": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "item_type_id": {
+                    "type": "integer"
+                },
+                "item_type_name": {
+                    "type": "string"
+                },
+                "planned_quantity": {
+                    "type": "number"
+                },
+                "reservations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/pocketeer_internal_app_services.ResourceReservationDTO"
+                    }
                 },
                 "resource_type": {
                     "$ref": "#/definitions/pocketeer_internal_platform_database_models.ResourceType"
@@ -2660,6 +2683,8 @@ const docTemplate = `{
             "type": "integer",
             "format": "int64",
             "enum": [
+                -9223372036854775808,
+                9223372036854775807,
                 1,
                 1000,
                 1000000,
@@ -2674,6 +2699,8 @@ const docTemplate = `{
                 3600000000000
             ],
             "x-enum-varnames": [
+                "minDuration",
+                "maxDuration",
                 "Nanosecond",
                 "Microsecond",
                 "Millisecond",

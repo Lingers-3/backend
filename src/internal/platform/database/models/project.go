@@ -42,8 +42,8 @@ type Project struct {
 	StartedAt  *time.Time
 	FinishedAt *time.Time
 
-	AuthID uint `gorm:"not null"`
-	User   User `gorm:"constraint:OnDelete:RESTRICT;"`
+	UserID uint `gorm:"not null"`
+	User   User `gorm:"constraint:OnDelete:CASCADE;"`
 
 	ResourceSpecifications []ResourceSpecification `gorm:"constraint:OnDelete:CASCADE;"`
 	ResourceReservations   []ResourceReservation   `gorm:"constraint:OnDelete:CASCADE;"`
