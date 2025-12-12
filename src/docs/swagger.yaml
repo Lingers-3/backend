@@ -348,7 +348,7 @@ definitions:
       actual_income:
         minimum: 0
         type: number
-      added_work_time:
+      actual_work_time:
         minimum: 0
         type: integer
     type: object
@@ -541,6 +541,14 @@ definitions:
     - ResourceTypeInstrument
   time.Duration:
     enum:
+    - -9223372036854775808
+    - 9223372036854775807
+    - 1
+    - 1000
+    - 1000000
+    - 1000000000
+    - 60000000000
+    - 3600000000000
     - 1
     - 1000
     - 1000000
@@ -550,6 +558,14 @@ definitions:
     format: int64
     type: integer
     x-enum-varnames:
+    - minDuration
+    - maxDuration
+    - Nanosecond
+    - Microsecond
+    - Millisecond
+    - Second
+    - Minute
+    - Hour
     - Nanosecond
     - Microsecond
     - Millisecond

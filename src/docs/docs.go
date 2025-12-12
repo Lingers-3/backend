@@ -2490,7 +2490,7 @@ const docTemplate = `{
                     "type": "number",
                     "minimum": 0
                 },
-                "added_work_time": {
+                "actual_work_time": {
                     "type": "integer",
                     "minimum": 0
                 }
@@ -2776,6 +2776,14 @@ const docTemplate = `{
             "type": "integer",
             "format": "int64",
             "enum": [
+                -9223372036854775808,
+                9223372036854775807,
+                1,
+                1000,
+                1000000,
+                1000000000,
+                60000000000,
+                3600000000000,
                 1,
                 1000,
                 1000000,
@@ -2784,6 +2792,14 @@ const docTemplate = `{
                 3600000000000
             ],
             "x-enum-varnames": [
+                "minDuration",
+                "maxDuration",
+                "Nanosecond",
+                "Microsecond",
+                "Millisecond",
+                "Second",
+                "Minute",
+                "Hour",
                 "Nanosecond",
                 "Microsecond",
                 "Millisecond",

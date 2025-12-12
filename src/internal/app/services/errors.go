@@ -2,8 +2,9 @@ package services
 
 import "errors"
 
-// WARN(noatu): dot not add ErrForbidden, use *NotFound
-var ( // Remember to sort that!
+// WARN(pencelheimer): use *NotFound instead of Forbidden
+var (
+	// NOTE(pencelheimer): Remember to sort this list
 	ErrDatabaseError                 = errors.New("database error")
 	ErrFileSystemError               = errors.New("file system error")
 	ErrForeignKeyViolated            = errors.New("resource is still in use")
@@ -15,6 +16,7 @@ var ( // Remember to sort that!
 	ErrPictureNotFound               = errors.New("picture not found")
 	ErrProjectAlreadyActive          = errors.New("project is already active or completed")
 	ErrProjectAlreadyExists          = errors.New("project with this name already exists")
+	ErrProjectNotActive              = errors.New("project is not active")
 	ErrProjectNotFound               = errors.New("project not found")
 	ErrProjectNotPlanning            = errors.New("project is not in planning state")
 	ErrResourceSpecificationNotFound = errors.New("resource specification not found")
