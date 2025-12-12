@@ -38,39 +38,6 @@ type ItemType struct { //  ∠( ᐛ 」∠)
 	DeletedAt              *time.Time `json:"deleted_at,omitempty"`
 }
 
-func ItemTypeFromModel(m *models.ItemType) *ItemType {
-	var deletedAt *time.Time
-	if m.DeletedAt.Valid {
-		deletedAt = &m.DeletedAt.Time
-	}
-
-	itemIDs := make([]uint, len(m.Items))
-	for i, item := range m.Items {
-		itemIDs[i] = item.ID
-	}
-
-	tagIDs := make([]uint, len(m.Tags))
-	for i, tag := range m.Tags {
-		tagIDs[i] = tag.ID
-	}
-
-	return &ItemType{
-		ID:                     m.ID,
-		Name:                   m.Name,
-		Description:            m.Description,
-		BaseMeasurementUnit:    m.BaseMeasurementUnit,
-		DisplayMeasurementUnit: m.DisplayMeasurementUnit,
-		DefaultQuantity:        m.DefaultQuantity,
-		ShortageTreshold:       m.ShortageThreshold,
-		PictureID:              m.PictureID,
-		ItemIDs:                itemIDs,
-		TagIDs:                 tagIDs,
-		CreatedAt:              m.CreatedAt,
-		UpdatedAt:              m.UpdatedAt,
-		DeletedAt:              deletedAt,
-	}
-}
-
 type ItemTypeFull struct {
 	ID                     uint     `json:"id"`
 	Name                   string   `json:"name"`
@@ -86,33 +53,6 @@ type ItemTypeFull struct {
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
-}
-
-func ItemTypeFullFromModel(m *models.ItemType) *ItemTypeFull {
-	items := make([]ItemFull, len(m.Items))
-	for i, item := range m.Items {
-		items[i] = ItemFullFromModel(item)
-	}
-
-	tags := make([]Tag, len(m.Tags))
-	for i, tag := range m.Tags {
-		tags[i] = TagFromModel(tag)
-	}
-
-	return &ItemTypeFull{
-		ID:                     m.ID,
-		Name:                   m.Name,
-		Description:            m.Description,
-		BaseMeasurementUnit:    m.BaseMeasurementUnit,
-		DisplayMeasurementUnit: m.DisplayMeasurementUnit,
-		DefaultQuantity:        m.DefaultQuantity,
-		ShortageThreshold:      m.ShortageThreshold,
-		PictureID:              m.PictureID,
-		Items:                  items,
-		Tags:                   tags,
-		CreatedAt:              m.CreatedAt,
-		UpdatedAt:              m.UpdatedAt,
-	}
 }
 
 type ItemTypeCreateRequest struct {

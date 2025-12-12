@@ -47,18 +47,23 @@ type ResourceSpecificationDTO struct {
 	PlannedQuantity float32             `json:"planned_quantity"`
 }
 
+type ResourceSpecificationFull struct {
+	ResourceSpecificationDTO
+	Reservations []ResourceReservationDTO `json:"reservations"`
+}
+
 type ResourceReservationDTO struct {
-	ID               uint    `json:"id"`
-	ItemID           uint    `json:"item_id"`
-	ItemDescription  *string `json:"item_description"` // NOTE(pencelheimer): For convenience
-	ReservedQuantity float32 `json:"reserved_quantity"`
-	UsedQuantity     float32 `json:"used_quantity"`
+	ID                      uint    `json:"id"`
+	ResourceSpecificationID uint    `json:"resource_specification_id"`
+	ItemID                  uint    `json:"item_id"`
+	ItemDescription         *string `json:"item_description"` // NOTE(pencelheimer): For convenience
+	ReservedQuantity        float32 `json:"reserved_quantity"`
+	UsedQuantity            float32 `json:"used_quantity"`
 }
 
 type ProjectFull struct {
 	Project
-	Specifications []ResourceSpecificationDTO `json:"specifications"`
-	Reservations   []ResourceReservationDTO   `json:"reservations"`
+	Specifications []ResourceSpecificationFull `json:"specifications"`
 }
 
 type ProjectCreateRequest struct {
@@ -158,13 +163,13 @@ func (s *ProjectService) Get(ctx context.Context, auth0ID string, projectID uint
 }
 
 type ProjectSearchRequest struct {
-    Query       string `json:"query" query:"query" validate:"omitempty,min=3"`
-    State       string `json:"state" query:"state" validate:"omitempty,oneof=Planning Active Completed Canceled"`
-    HasDeadline *bool  `json:"has_deadline" query:"has_deadline"`
-    SortBy      string `json:"sort_by" query:"sort_by" validate:"omitempty,oneof=name deadline created_at updated_at"`
-    SortOrder   string `json:"sort_order" query:"sort_order" validate:"omitempty,oneof=asc desc"`
-    Page        int    `json:"page" query:"page" validate:"gte=1"`
-    PageSize    int    `json:"page_size" query:"page_size" validate:"gte=1,lte=100"`
+	Query       string `json:"query" query:"query" validate:"omitempty,min=3"`
+	State       string `json:"state" query:"state" validate:"omitempty,oneof=Planning Active Completed Canceled"`
+	HasDeadline *bool  `json:"has_deadline" query:"has_deadline"`
+	SortBy      string `json:"sort_by" query:"sort_by" validate:"omitempty,oneof=name deadline created_at updated_at"`
+	SortOrder   string `json:"sort_order" query:"sort_order" validate:"omitempty,oneof=asc desc"`
+	Page        int    `json:"page" query:"page" validate:"gte=1"`
+	PageSize    int    `json:"page_size" query:"page_size" validate:"gte=1,lte=100"`
 }
 
 func (s *ProjectService) GetAll(ctx context.Context, auth0ID string, req ProjectSearchRequest) ([]*Project, error) {
@@ -174,14 +179,4 @@ func (s *ProjectService) GetAll(ctx context.Context, auth0ID string, req Project
 // NOTE(pencelheimer): Usually only allowed for Planning state or soft-delete for others
 func (s *ProjectService) Delete(ctx context.Context, auth0ID string, projectID uint) (bool, error) {
 	return false, nil
-}
-
-func ProjectFromModel(m *models.Project) *Project {
-	// TODO(pencelheimer): Mapping logic
-	return &Project{}
-}
-
-func ProjectFullFromModel(m *models.Project) *ProjectFull {
-	// TODO(pencelheimer): Mapping logic
-	return &ProjectFull{}
 }

@@ -29,16 +29,6 @@ type Tag struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-func TagFromModel(m models.Tag) Tag {
-	return Tag{
-		ID:        m.ID,
-		Name:      m.Name,
-		Color:     m.Color,
-		CreatedAt: m.CreatedAt,
-		UpdatedAt: m.UpdatedAt,
-	}
-}
-
 type TagFull struct {
 	ID          uint      `json:"id"`
 	UserID      uint      `json:"user_id"`
@@ -48,23 +38,6 @@ type TagFull struct {
 	ItemTypeIDs []uint    `json:"item_type_ids"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
-}
-
-func TagFullFromModel(m *models.Tag, itemIDs, itemTypeIDs []uint) *TagFull {
-	if m == nil {
-		return nil
-	}
-
-	return &TagFull{
-		ID:          m.ID,
-		UserID:      m.UserID,
-		Color:       m.Color,
-		Name:        m.Name,
-		ItemIDs:     itemIDs,
-		ItemTypeIDs: itemTypeIDs,
-		CreatedAt:   m.CreatedAt,
-		UpdatedAt:   m.UpdatedAt,
-	}
 }
 
 type CreateTagRequest struct {
