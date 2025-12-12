@@ -13,6 +13,7 @@ var ( // Remember to sort that!
 	ErrItemTypeNotFound              = errors.New("item type not found")
 	ErrNotImplemented                = errors.New("method is not yet implemented")
 	ErrPictureNotFound               = errors.New("picture not found")
+	ErrProjectAlreadyActive          = errors.New("project is already active or completed")
 	ErrProjectAlreadyExists          = errors.New("project with this name already exists")
 	ErrProjectNotFound               = errors.New("project not found")
 	ErrProjectNotPlanning            = errors.New("project is not in planning state")

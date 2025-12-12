@@ -9,6 +9,7 @@ import (
 	"pocketeer/internal/platform/database/models"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type ProjectService struct {
@@ -262,7 +263,99 @@ func (s *ProjectService) RemovePlannedResource(ctx context.Context, auth0ID stri
 
 // Transition: Planning -> Active. Triggers auto-reservation.
 func (s *ProjectService) Start(ctx context.Context, auth0ID string, projectID uint) (*ProjectFull, error) {
-	return nil, nil
+	tx_func := func(tx *gorm.DB) error {
+		userID, err := s.userService.GetUserIDByAuth0ID(ctx, auth0ID)
+		if err != nil {
+			return err
+		}
+
+		var project models.Project
+		if err := tx.
+			Preload("ResourceSpecifications").
+			Clauses(clause.Locking{Strength: "UPDATE"}). // NOTE(pencelheimer): lock to prevent race conditions
+			Where("id = ? AND user_id = ?", projectID, userID).
+			First(&project).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrProjectNotFound
+			}
+			return ErrDatabaseError
+		}
+
+		if project.State != models.ProjectStatePlanning {
+			return ErrProjectAlreadyActive
+		}
+
+		for _, spec := range project.ResourceSpecifications {
+			remainingToReserve := spec.PlannedQuantity
+
+			var items []models.Item
+			if err := tx.
+				Where("item_type_id = ?", spec.ItemTypeID).
+				Order("expiration_date ASC NULLS LAST, id ASC").
+				Find(&items).Error; err != nil {
+				return ErrDatabaseError
+			}
+
+			for _, item := range items {
+				if remainingToReserve <= 0 {
+					break
+				}
+
+				var reservedSum float32
+				if err := tx.Model(&models.ResourceReservation{}).
+					Where("item_id = ?", item.ID).
+					Select("COALESCE(SUM(reserved_quantity), 0)").
+					Scan(&reservedSum).Error; err != nil {
+					return ErrDatabaseError
+				}
+
+				available := item.Quantity - reservedSum
+
+				if available <= 0 {
+					continue
+				}
+
+				var amountToTake float32
+				if available < remainingToReserve {
+					amountToTake = available
+				} else {
+					amountToTake = remainingToReserve
+				}
+
+				reservation := models.ResourceReservation{
+					ProjectID:               project.ID,
+					ItemID:                  item.ID,
+					ResourceSpecificationID: spec.ID,
+					ReservedQuantity:        amountToTake,
+					UsedQuantity:            0,
+				}
+
+				if err := tx.Create(&reservation).Error; err != nil {
+					return ErrDatabaseError
+				}
+
+				remainingToReserve -= amountToTake
+			}
+
+			// NOTE(pencelheimer): remainingToReserve > 0 after the loop end means resource shortage, we should create an alert about it.
+		}
+
+		now := time.Now()
+		project.State = models.ProjectStateActive
+		project.StartedAt = &now
+
+		if err := tx.Save(&project).Error; err != nil {
+			return ErrDatabaseError
+		}
+
+		return nil
+	}
+
+	if err := s.db.WithContext(ctx).Transaction(tx_func); err != nil {
+		return nil, err
+	}
+
+	return s.Get(ctx, auth0ID, projectID)
 }
 
 // when State == Active
