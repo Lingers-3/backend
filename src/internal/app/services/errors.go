@@ -20,6 +20,7 @@ var (
 	ErrProjectNotActive              = errors.New("project is not active")
 	ErrProjectNotFound               = errors.New("project not found")
 	ErrProjectNotPlanning            = errors.New("project is not in planning state")
+	ErrResourceReservationNotFound   = errors.New("resource reservation not found")
 	ErrResourceSpecificationNotFound = errors.New("resource specification not found")
 	ErrTagAlreadyExists              = errors.New("tag already exists")
 	ErrTagNotFound                   = errors.New("tag not found")

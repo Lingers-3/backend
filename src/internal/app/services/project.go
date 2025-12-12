@@ -547,7 +547,44 @@ type UpdateResourceUsageRequest struct {
 }
 
 func (s *ProjectService) UpdateResourceUsage(ctx context.Context, auth0ID string, projectID uint, reservationID uint, req UpdateResourceUsageRequest) (*ResourceReservation, error) {
-	return nil, nil
+	userID, err := s.userService.GetUserIDByAuth0ID(ctx, auth0ID)
+	if err != nil {
+		return nil, err
+	}
+
+	var reservation models.ResourceReservation
+	err = s.db.WithContext(ctx).
+		Preload("Project").
+		Preload("Item").
+		Where("id = ?", reservationID).
+		First(&reservation).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrResourceReservationNotFound
+		}
+		return nil, ErrDatabaseError
+	}
+
+	if reservation.Project.UserID != userID {
+		return nil, ErrProjectNotFound
+	}
+
+	if reservation.ProjectID != projectID {
+		return nil, ErrProjectNotFound
+	}
+
+	if reservation.Project.State != models.ProjectStateActive {
+		return nil, ErrProjectNotActive
+	}
+
+	reservation.UsedQuantity = req.UsedQuantity
+
+	if err := s.db.WithContext(ctx).Save(&reservation).Error; err != nil {
+		return nil, ErrDatabaseError
+	}
+
+	dto := ResourceReservationDTOFromModel(reservation)
+	return &dto, nil
 }
 
 // Transition: Active -> Canceled. Releases reservations.
