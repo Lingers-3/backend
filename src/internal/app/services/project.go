@@ -317,7 +317,26 @@ func (s *ProjectService) Complete(ctx context.Context, auth0ID string, projectID
 }
 
 func (s *ProjectService) Get(ctx context.Context, auth0ID string, projectID uint) (*ProjectFull, error) {
-	return nil, nil
+	userID, err := s.userService.GetUserIDByAuth0ID(ctx, auth0ID)
+	if err != nil {
+		return nil, err
+	}
+
+	var project models.Project
+	err = s.db.WithContext(ctx).
+		// NOTE(noatu): Eager load associations for the full project view
+		Preload("ResourceSpecifications.ItemType").
+		Preload("ResourceSpecifications.ResourceReservations.Item").
+		Where("id = ? AND user_id = ?", projectID, userID).
+		First(&project).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrProjectNotFound
+		}
+		return nil, ErrDatabaseError
+	}
+
+	return ProjectFullFromModel(&project), nil
 }
 
 type ProjectSearchRequest struct {
@@ -331,10 +350,80 @@ type ProjectSearchRequest struct {
 }
 
 func (s *ProjectService) GetAll(ctx context.Context, auth0ID string, req ProjectSearchRequest) ([]*Project, error) {
-	return nil, nil
+	userID, err := s.userService.GetUserIDByAuth0ID(ctx, auth0ID)
+	if err != nil {
+		return nil, err
+	}
+
+	query := s.db.WithContext(ctx).Model(&models.Project{}).Where("user_id = ?", userID)
+
+	if req.Query != "" {
+		// NOTE(noatu): using case insensitive matching
+		query = query.Where("name ILIKE ? OR description ILIKE ?", "%"+req.Query+"%", "%"+req.Query+"%")
+	}
+	if req.State != "" {
+		query = query.Where("state = ?", req.State)
+	}
+	if req.HasDeadline != nil {
+		if *req.HasDeadline {
+			query = query.Where("planned_deadline IS NOT NULL")
+		} else {
+			query = query.Where("planned_deadline IS NULL")
+		}
+	}
+	if req.SortBy != "" {
+		order := "asc"
+		if req.SortOrder != "" {
+			order = req.SortOrder
+		}
+		query = query.Order(req.SortBy + " " + order)
+	}
+
+	offset := (req.Page - 1) * req.PageSize
+	query = query.Offset(offset).Limit(req.PageSize)
+
+	var projects []models.Project
+	if err := query.Find(&projects).Error; err != nil {
+		return nil, ErrDatabaseError
+	}
+
+	result := make([]*Project, len(projects))
+	for i, p := range projects {
+		result[i] = ProjectFromModel(&p)
+	}
+
+	return result, nil
 }
 
 // NOTE(pencelheimer): Usually only allowed for Planning state or soft-delete for others
 func (s *ProjectService) Delete(ctx context.Context, auth0ID string, projectID uint) (bool, error) {
-	return false, nil
+	userID, err := s.userService.GetUserIDByAuth0ID(ctx, auth0ID)
+	if err != nil {
+		return false, err
+	}
+
+	var project models.Project
+	err = s.db.WithContext(ctx).
+		Where("id = ? AND user_id = ?", projectID, userID).
+		First(&project).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return false, ErrProjectNotFound
+		}
+		return false, ErrDatabaseError
+	}
+
+	if project.State == models.ProjectStatePlanning {
+		// Hard delete for projects in the "Planning" state
+		if err := s.db.WithContext(ctx).Unscoped().Delete(&project).Error; err != nil {
+			return false, ErrDatabaseError
+		}
+	} else {
+		// Soft delete for all other states
+		if err := s.db.WithContext(ctx).Delete(&project).Error; err != nil {
+			return false, ErrDatabaseError
+		}
+	}
+
+	return true, nil
 }
