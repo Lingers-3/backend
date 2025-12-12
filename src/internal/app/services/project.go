@@ -2,10 +2,13 @@ package services
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"pocketeer/internal/platform/database"
 	"pocketeer/internal/platform/database/models"
+
+	"gorm.io/gorm"
 )
 
 type ProjectService struct {
@@ -82,7 +85,7 @@ func (s *ProjectService) Create(ctx context.Context, auth0ID string, req Project
 
 	var plannedWorkTime *time.Duration
 	if req.PlannedWorkTime != nil {
-		val := time.Duration(*req.PlannedWorkTime) * time.Hour
+		val := time.Duration(*req.PlannedWorkTime)
 		plannedWorkTime = &val
 	}
 
@@ -114,7 +117,54 @@ type ProjectPlanUpdateRequest struct {
 }
 
 func (s *ProjectService) UpdatePlan(ctx context.Context, auth0ID string, projectID uint, req ProjectPlanUpdateRequest) (*Project, error) {
-	return nil, nil
+	userID, err := s.userService.GetUserIDByAuth0ID(ctx, auth0ID)
+	if err != nil {
+		return nil, err
+	}
+
+	var project models.Project
+	err = s.db.WithContext(ctx).
+		Where("id = ? AND user_id = ?", projectID, userID).
+		First(&project).Error
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrProjectNotFound
+		}
+		return nil, ErrDatabaseError
+	}
+
+	if project.State != models.ProjectStatePlanning {
+		return nil, ErrProjectNotPlanning
+	}
+
+	hasUpdates := false
+
+	if req.Description != nil {
+		project.Description = req.Description
+		hasUpdates = true
+	}
+	if req.PlannedDeadline != nil {
+		project.PlannedDeadline = req.PlannedDeadline
+		hasUpdates = true
+	}
+	if req.PlannedIncome != nil {
+		project.PlannedIncome = req.PlannedIncome
+		hasUpdates = true
+	}
+	if req.PlannedWorkTime != nil {
+		dur := time.Duration(*req.PlannedWorkTime)
+		project.PlannedWorkTime = &dur
+		hasUpdates = true
+	}
+
+	if hasUpdates {
+		if err := s.db.WithContext(ctx).Save(&project).Error; err != nil {
+			return nil, ErrDatabaseError
+		}
+	}
+
+	return ProjectFromModel(&project), nil
 }
 
 // when State == Planning
