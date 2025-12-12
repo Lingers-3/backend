@@ -98,7 +98,7 @@ func (h *UserHandler) Get(c echo.Context) error {
 // @Tags         user
 // @Accept       json
 // @Produce      json
-// @Success      200  {object}  map[string]string  "message: user deleted successfully"
+// @Success      204  {object}  nil             "user deleted successfully"
 // @Failure      401  {object}  echo.HTTPError
 // @Failure      404  {object}  echo.HTTPError  "user not found"
 // @Failure      500  {object}  echo.HTTPError
@@ -140,7 +140,7 @@ func (h *UserHandler) Delete(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusUnauthorized)
 	}
 
-	_, err = h.service.DeleteUserByAuth0ID(c.Request().Context(), auth0ID)
+	err = h.service.DeleteUserByAuth0ID(c.Request().Context(), auth0ID)
 
 	if err != nil {
 		if errors.Is(err, services.ErrUserNotFound) {
@@ -149,7 +149,5 @@ func (h *UserHandler) Delete(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 
-	return c.JSON(http.StatusOK, map[string]string{
-		"message": "user deleted successfully",
-	})
+	return c.NoContent(http.StatusNoContent)
 }
