@@ -129,6 +129,33 @@ definitions:
       updated_at:
         type: string
     type: object
+  pocketeer_internal_app_services.ItemCreateRequest:
+    properties:
+      description:
+        maxLength: 512
+        type: string
+      display_measurement_unit:
+        maxLength: 256
+        type: string
+      expiration_date:
+        type: string
+      item_type_id:
+        type: integer
+      purchase_price:
+        maximum: 1000000
+        minimum: 0
+        type: number
+      quantity:
+        maximum: 1000000
+        minimum: 0
+        type: number
+      tag_ids:
+        items:
+          type: integer
+        type: array
+    required:
+    - item_type_id
+    type: object
   pocketeer_internal_app_services.ItemFull:
     properties:
       created_at:
@@ -514,16 +541,6 @@ definitions:
     - ResourceTypeInstrument
   time.Duration:
     enum:
-    - -9223372036854775808
-    - 9223372036854775807
-    - 1
-    - 1000
-    - 1000000
-    - 1000000000
-    - 60000000000
-    - 3600000000000
-    - -9223372036854775808
-    - 9223372036854775807
     - 1
     - 1000
     - 1000000
@@ -533,16 +550,6 @@ definitions:
     format: int64
     type: integer
     x-enum-varnames:
-    - minDuration
-    - maxDuration
-    - Nanosecond
-    - Microsecond
-    - Millisecond
-    - Second
-    - Minute
-    - Hour
-    - minDuration
-    - maxDuration
     - Nanosecond
     - Microsecond
     - Millisecond
@@ -855,6 +862,41 @@ paths:
       security:
       - BearerAuth: []
       summary: List all items
+      tags:
+      - items
+    post:
+      consumes:
+      - application/json
+      description: Create a new item associated with an item type
+      parameters:
+      - description: Item Creation Request
+        in: body
+        name: item
+        required: true
+        schema:
+          $ref: '#/definitions/pocketeer_internal_app_services.ItemCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/pocketeer_internal_app_services.Item'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+      security:
+      - BearerAuth: []
+      summary: Create a new item
       tags:
       - items
   /items/{id}:

@@ -28,6 +28,19 @@ func (h *ItemHandler) RegisterRoutes(router *echo.Group, middlewares ...echo.Mid
 	group.GET("/full", h.GetAllFull)
 }
 
+// CreateItem creates a new item
+// @Summary      Create a new item
+// @Description  Create a new item associated with an item type
+// @Tags         items
+// @Accept       json
+// @Produce      json
+// @Param        item  body      services.ItemCreateRequest  true  "Item Creation Request"
+// @Success      201   {object}  services.Item
+// @Failure      400   {object}  echo.HTTPError
+// @Failure      401   {object}  echo.HTTPError
+// @Failure      500   {object}  echo.HTTPError
+// @Router       /items [post]
+// @Security     BearerAuth
 func (h *ItemHandler) Create(c echo.Context) error {
 	var payload services.ItemCreateRequest
 	err := ParseAndValidatePayload(c, &payload)
