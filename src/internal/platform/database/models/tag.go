@@ -10,6 +10,9 @@ type Tag struct {
 
 	// https://gorm.io/docs/has_many.html
 	UserID uint `gorm:"not null;uniqueIndex:idx_user_name"`
+
+	Items     []Item     `gorm:"many2many:item_tags;"`
+	ItemTypes []ItemType `gorm:"many2many:item_type_tags;"`
 }
 
 func (Tag) TableName() string {

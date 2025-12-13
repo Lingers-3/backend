@@ -20,7 +20,11 @@ RUN go build -ldflags="-s -w" -o /app/server ./cmd/server
 # RUNTIME stage
 FROM alpine:3.22
 
-RUN adduser -D nonroot
+RUN adduser -D nonroot 
+
+RUN mkdir -p /var/pocketeer && \
+    chown -R nonroot:nonroot /var/pocketeer
+
 USER nonroot
 WORKDIR /home/nonroot/
 
