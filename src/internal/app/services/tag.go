@@ -104,9 +104,13 @@ func (s *TagService) Get(ctx context.Context, auth0ID string, tagID uint) (*TagF
 	}
 
 	var tag models.Tag
+
 	err = s.db.WithContext(ctx).
+		Preload("Items", func(db *gorm.DB) *gorm.DB { return db.Select("id") }).
+		Preload("ItemTypes", func(db *gorm.DB) *gorm.DB { return db.Select("id") }).
 		Where("id = ? AND user_id = ?", tagID, userID).
 		First(&tag).Error
+
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, ErrTagNotFound
@@ -114,24 +118,14 @@ func (s *TagService) Get(ctx context.Context, auth0ID string, tagID uint) (*TagF
 		return nil, ErrDatabaseError
 	}
 
-	var itemIDs []uint
-	err = s.db.Model(&models.Item{}).
-		Select(`"Items".id`).
-		Joins(`JOIN "item_tags" itt ON itt.item_id = "Items".id`).
-		Where("itt.tag_id = ?", tag.ID).
-		Pluck(`"Items".id`, &itemIDs).Error
-	if err != nil {
-		return nil, ErrDatabaseError
+	itemIDs := make([]uint, len(tag.Items))
+	for i, item := range tag.Items {
+		itemIDs[i] = item.ID
 	}
 
-	var itemTypeIDs []uint
-	err = s.db.Model(&models.ItemType{}).
-		Select(`"ItemTypes".id`).
-		Joins(`JOIN "item_type_tags" ittt ON ittt.item_type_id = "ItemTypes".id`).
-		Where("ittt.tag_id = ?", tag.ID).
-		Pluck(`"ItemTypes".id`, &itemTypeIDs).Error
-	if err != nil {
-		return nil, ErrDatabaseError
+	itemTypeIDs := make([]uint, len(tag.ItemTypes))
+	for i, it := range tag.ItemTypes {
+		itemTypeIDs[i] = it.ID
 	}
 
 	return TagFullFromModel(&tag, itemIDs, itemTypeIDs), nil
@@ -144,15 +138,30 @@ func (s *TagService) GetAll(ctx context.Context, auth0ID string) ([]*TagFull, er
 	}
 
 	var tags []models.Tag
-	err = s.db.WithContext(ctx).Where("user_id = ?", userID).Find(&tags).Error
+	err = s.db.WithContext(ctx).
+		Preload("Items", func(db *gorm.DB) *gorm.DB { return db.Select("id") }).
+		Preload("ItemTypes", func(db *gorm.DB) *gorm.DB { return db.Select("id") }).
+		Where("user_id = ?", userID).
+		Find(&tags).Error
 
 	if err != nil {
 		return nil, ErrDatabaseError
 	}
 
 	result := make([]*TagFull, 0, len(tags))
+
 	for i := range tags {
-		result = append(result, TagFullFromModel(&tags[i], nil, nil))
+		itemIDs := make([]uint, len(tags[i].Items))
+		for j, item := range tags[i].Items {
+			itemIDs[j] = item.ID
+		}
+
+		itemTypeIDs := make([]uint, len(tags[i].ItemTypes))
+		for j, it := range tags[i].ItemTypes {
+			itemTypeIDs[j] = it.ID
+		}
+
+		result = append(result, TagFullFromModel(&tags[i], itemIDs, itemTypeIDs))
 	}
 
 	return result, nil
