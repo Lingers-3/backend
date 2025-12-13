@@ -20,12 +20,13 @@ func (h *ProjectHandler) RegisterRoutes(router *echo.Group, middlewares ...echo.
 	group := router.Group("/projects", middlewares...)
 
 	group.POST("", h.Create)
+	group.PATCH("/:id", h.Update)
 	group.GET("", h.GetAll)
 	group.GET("/:id", h.Get)
 	group.DELETE("/:id", h.Delete)
 
 	// Planning
-	group.PUT("/:id/plan", h.UpdatePlan)
+	group.PATCH("/:id/plan", h.UpdatePlan)
 	group.POST("/:id/plan/resources", h.AddPlannedResource)
 	group.DELETE("/:id/plan/resources/:specId", h.RemovePlannedResource)
 
@@ -70,6 +71,41 @@ func (h *ProjectHandler) Create(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusCreated, result)
+}
+
+// Update
+// @Summary      Update project details
+// @Description  Update project name or description
+// @Tags         projects
+// @Accept       json
+// @Produce      json
+// @Param        id    path      int                            true  "Project ID"
+// @Param        body  body      services.ProjectUpdateRequest  true  "Update Request"
+// @Success      200   {object}  services.Project
+// @Router       /projects/{id} [patch]
+// @Security     BearerAuth
+func (h *ProjectHandler) Update(c echo.Context) error {
+	id, err := GetIDParam(c)
+	if err != nil {
+		return err
+	}
+
+	var payload services.ProjectUpdateRequest
+	if err := ParseAndValidatePayload(c, &payload); err != nil {
+		return err
+	}
+
+	auth0ID, err := GetAuth0ID(c)
+	if err != nil {
+		return err
+	}
+
+	result, err := h.service.Update(c.Request().Context(), auth0ID, id, payload)
+	if err != nil {
+		return ServiceErrToHttp(err)
+	}
+
+	return c.JSON(http.StatusOK, result)
 }
 
 // GetAll

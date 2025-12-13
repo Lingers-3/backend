@@ -409,9 +409,6 @@ definitions:
     type: object
   pocketeer_internal_app_services.ProjectPlanUpdateRequest:
     properties:
-      description:
-        maxLength: 512
-        type: string
       planned_deadline:
         type: string
       planned_income:
@@ -420,6 +417,16 @@ definitions:
       planned_work_time:
         minimum: 0
         type: integer
+    type: object
+  pocketeer_internal_app_services.ProjectUpdateRequest:
+    properties:
+      description:
+        maxLength: 512
+        type: string
+      name:
+        maxLength: 256
+        minLength: 1
+        type: string
     type: object
   pocketeer_internal_app_services.ResourceReservation:
     properties:
@@ -549,23 +556,11 @@ definitions:
     - 1000000000
     - 60000000000
     - 3600000000000
-    - 1
-    - 1000
-    - 1000000
-    - 1000000000
-    - 60000000000
-    - 3600000000000
     format: int64
     type: integer
     x-enum-varnames:
     - minDuration
     - maxDuration
-    - Nanosecond
-    - Microsecond
-    - Millisecond
-    - Second
-    - Minute
-    - Hour
     - Nanosecond
     - Microsecond
     - Millisecond
@@ -1336,6 +1331,34 @@ paths:
       security:
       - BearerAuth: []
       summary: Get project details
+      tags:
+      - projects
+    patch:
+      consumes:
+      - application/json
+      description: Update project name or description
+      parameters:
+      - description: Project ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Update Request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/pocketeer_internal_app_services.ProjectUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pocketeer_internal_app_services.Project'
+      security:
+      - BearerAuth: []
+      summary: Update project details
       tags:
       - projects
   /projects/{id}/actual:

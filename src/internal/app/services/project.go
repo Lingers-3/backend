@@ -109,9 +109,64 @@ func (s *ProjectService) Create(ctx context.Context, auth0ID string, req Project
 	return ProjectFromModel(&project), nil
 }
 
+type ProjectUpdateRequest struct {
+	Name        *string `json:"name" validate:"omitempty,min=1,max=256"`
+	Description *string `json:"description" validate:"omitempty,max=512"`
+}
+
+func (s *ProjectService) Update(ctx context.Context, auth0ID string, projectID uint, req ProjectUpdateRequest) (*Project, error) {
+	userID, err := s.userService.GetUserIDByAuth0ID(ctx, auth0ID)
+	if err != nil {
+		return nil, err
+	}
+
+	var project models.Project
+	err = s.db.WithContext(ctx).
+		Where("id = ? AND user_id = ?", projectID, userID).
+		First(&project).Error
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrProjectNotFound
+		}
+		return nil, ErrDatabaseError
+	}
+
+	hasUpdates := false
+
+	if req.Name != nil && *req.Name != project.Name {
+		var count int64
+		err := s.db.WithContext(ctx).Model(&models.Project{}).
+			Where("user_id = ? AND name = ? AND id != ?", userID, *req.Name, projectID).
+			Count(&count).Error
+		if err != nil {
+			return nil, ErrDatabaseError
+		}
+
+		if count > 0 {
+			return nil, ErrProjectAlreadyExists
+		}
+
+		project.Name = *req.Name
+		hasUpdates = true
+	}
+
+	if req.Description != nil {
+		project.Description = req.Description
+		hasUpdates = true
+	}
+
+	if hasUpdates {
+		if err := s.db.WithContext(ctx).Save(&project).Error; err != nil {
+			return nil, ErrDatabaseError
+		}
+	}
+
+	return ProjectFromModel(&project), nil
+}
+
 // when State == Planning
 type ProjectPlanUpdateRequest struct {
-	Description     *string    `json:"description" validate:"omitempty,max=512"`
 	PlannedDeadline *time.Time `json:"planned_deadline" validate:"omitempty,gt=now"`
 	PlannedIncome   *float32   `json:"planned_income" validate:"omitempty,gte=0"`
 	PlannedWorkTime *int64     `json:"planned_work_time" validate:"omitempty,gte=0"`
@@ -141,10 +196,6 @@ func (s *ProjectService) UpdatePlan(ctx context.Context, auth0ID string, project
 
 	hasUpdates := false
 
-	if req.Description != nil {
-		project.Description = req.Description
-		hasUpdates = true
-	}
 	if req.PlannedDeadline != nil {
 		project.PlannedDeadline = req.PlannedDeadline
 		hasUpdates = true

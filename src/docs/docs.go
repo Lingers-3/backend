@@ -1189,6 +1189,50 @@ const docTemplate = `{
                         "description": "No Content"
                     }
                 }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update project name or description",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "projects"
+                ],
+                "summary": "Update project details",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Project ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update Request",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocketeer_internal_app_services.ProjectUpdateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/pocketeer_internal_app_services.Project"
+                        }
+                    }
+                }
             }
         },
         "/projects/{id}/actual": {
@@ -2580,10 +2624,6 @@ const docTemplate = `{
         "pocketeer_internal_app_services.ProjectPlanUpdateRequest": {
             "type": "object",
             "properties": {
-                "description": {
-                    "type": "string",
-                    "maxLength": 512
-                },
                 "planned_deadline": {
                     "type": "string"
                 },
@@ -2594,6 +2634,20 @@ const docTemplate = `{
                 "planned_work_time": {
                     "type": "integer",
                     "minimum": 0
+                }
+            }
+        },
+        "pocketeer_internal_app_services.ProjectUpdateRequest": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "maxLength": 512
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 256,
+                    "minLength": 1
                 }
             }
         },
@@ -2783,23 +2837,11 @@ const docTemplate = `{
                 1000000,
                 1000000000,
                 60000000000,
-                3600000000000,
-                1,
-                1000,
-                1000000,
-                1000000000,
-                60000000000,
                 3600000000000
             ],
             "x-enum-varnames": [
                 "minDuration",
                 "maxDuration",
-                "Nanosecond",
-                "Microsecond",
-                "Millisecond",
-                "Second",
-                "Minute",
-                "Hour",
                 "Nanosecond",
                 "Microsecond",
                 "Millisecond",
