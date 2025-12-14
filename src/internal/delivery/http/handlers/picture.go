@@ -23,6 +23,20 @@ func (h *PictureHandler) RegisterRoutes(router *echo.Group, middlewares ...echo.
 	group.DELETE("/:id", h.Delete)
 }
 
+// Represents the static file serving endpoint.
+// @Summary      Get a static picture
+// @Description  Serves an image file from the static directory
+// @Tags         pictures
+// @Produce      image/png, image/jpeg, image/webp, image/gif
+// @Param        hash path string true "Image Hash (Filename)"
+// @Success      200        {file}    file
+// @Failure      404        {string}  string  "Not Found"
+// @Router       /pictures/{hash} [get]
+func ServeStaticPictures() {
+	// NOTE(noatu): This function exists solely for Swagger documentation.
+	// The actual serving is handled by e.Static("/pictures", ...) in main.go
+}
+
 // Upload uploads a new picture
 // @Summary      Upload picture
 // @Description  Upload a new image file (max 10MB). Supported formats: JPEG, PNG, WebP, GIF
