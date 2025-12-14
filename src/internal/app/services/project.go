@@ -172,7 +172,12 @@ type ProjectPlanUpdateRequest struct {
 	PlannedWorkTime *int64     `json:"planned_work_time" validate:"omitempty,gte=0"`
 }
 
-func (s *ProjectService) UpdatePlan(ctx context.Context, auth0ID string, projectID uint, req ProjectPlanUpdateRequest) (*Project, error) {
+func (s *ProjectService) UpdatePlan(
+	ctx context.Context,
+	auth0ID string,
+	projectID uint,
+	req ProjectPlanUpdateRequest,
+) (*Project, error) {
 	userID, err := s.userService.GetUserIDByAuth0ID(ctx, auth0ID)
 	if err != nil {
 		return nil, err
@@ -226,7 +231,12 @@ type AddPlannedResourceRequest struct {
 	PlannedQuantity float32 `json:"planned_quantity" validate:"required,gt=0"`
 }
 
-func (s *ProjectService) AddPlannedResource(ctx context.Context, auth0ID string, projectID uint, req AddPlannedResourceRequest) (*ResourceSpecification, error) {
+func (s *ProjectService) AddPlannedResource(
+	ctx context.Context,
+	auth0ID string,
+	projectID uint,
+	req AddPlannedResourceRequest,
+) (*ResourceSpecification, error) {
 	userID, err := s.userService.GetUserIDByAuth0ID(ctx, auth0ID)
 	if err != nil {
 		return nil, err
@@ -416,7 +426,12 @@ type ProjectActualMetricsRequest struct {
 	ActualWorkTime *int64     `json:"actual_work_time" validate:"omitempty,gte=0"`
 }
 
-func (s *ProjectService) UpdateActualMetrics(ctx context.Context, auth0ID string, projectID uint, req ProjectActualMetricsRequest) (*Project, error) {
+func (s *ProjectService) UpdateActualMetrics(
+	ctx context.Context,
+	auth0ID string,
+	projectID uint,
+	req ProjectActualMetricsRequest,
+) (*Project, error) {
 	userID, err := s.userService.GetUserIDByAuth0ID(ctx, auth0ID)
 	if err != nil {
 		return nil, err
@@ -464,17 +479,29 @@ func (s *ProjectService) UpdateActualMetrics(ctx context.Context, auth0ID string
 	return ProjectFromModel(&project), nil
 }
 
-// when State == Active. Creates Spec + Reservation
-type AddActiveResourceRequest struct {
-	ItemTypeID       uint    `json:"item_type_id" validate:"required,gt=0"`
-	ResourceType     string  `json:"resource_type" validate:"required,oneof=Consumable Instrument"`
-	ReservedQuantity float32 `json:"reserved_quantity" validate:"required,gt=0"`
-	UsedQuantity     float32 `json:"used_quantity" validate:"gte=0"`
+// when State == Active
+type ActiveResourceItemRequest struct {
+	ItemID   uint    `json:"item_id" validate:"required"`
+	Reserved float32 `json:"reserved" validate:"required,gt=0"`
+	Used     float32 `json:"used" validate:"gte=0"`
 }
 
-func (s *ProjectService) AddActiveResource(ctx context.Context, auth0ID string, projectID uint, req AddActiveResourceRequest) (*ProjectFull, error) {
-	if req.UsedQuantity > req.ReservedQuantity {
-		return nil, ErrInvalidQuantity
+type AddActiveResourceRequest struct {
+	ItemTypeID   uint                        `json:"item_type_id" validate:"required,gt=0"`
+	ResourceType string                      `json:"resource_type" validate:"required,oneof=Consumable Instrument"`
+	Resources    []ActiveResourceItemRequest `json:"resources" validate:"required,min=1,dive"`
+}
+
+func (s *ProjectService) AddActiveResource(
+	ctx context.Context,
+	auth0ID string,
+	projectID uint,
+	req AddActiveResourceRequest,
+) (*ProjectFull, error) {
+	for _, res := range req.Resources {
+		if res.Used > res.Reserved {
+			return nil, ErrInvalidQuantity
+		}
 	}
 
 	tx_func := func(tx *gorm.DB) error {
@@ -519,20 +546,13 @@ func (s *ProjectService) AddActiveResource(ctx context.Context, auth0ID string, 
 			return ErrDatabaseError
 		}
 
-		remainingToReserve := req.ReservedQuantity
-		remainingToUse := req.UsedQuantity
-
-		var items []models.Item
-		if err := tx.
-			Where("item_type_id = ?", req.ItemTypeID).
-			Order("expiration_date ASC NULLS LAST, id ASC").
-			Find(&items).Error; err != nil {
-			return ErrDatabaseError
-		}
-
-		for _, item := range items {
-			if remainingToReserve <= 0 {
-				break
+		for _, resReq := range req.Resources {
+			var item models.Item
+			if err := tx.Where("id = ? AND item_type_id = ?", resReq.ItemID, req.ItemTypeID).First(&item).Error; err != nil {
+				if errors.Is(err, gorm.ErrRecordNotFound) {
+					return ErrItemMismatch
+				}
+				return ErrDatabaseError
 			}
 
 			var reservedSum float32
@@ -544,47 +564,28 @@ func (s *ProjectService) AddActiveResource(ctx context.Context, auth0ID string, 
 			}
 
 			available := item.Quantity - reservedSum
-			if available <= 0 {
-				continue
-			}
 
-			amountToReserve := remainingToReserve
-			if available < remainingToReserve {
-				amountToReserve = available
-			}
-
-			amountToUse := float32(0)
-			if remainingToUse > 0 {
-				if amountToReserve >= remainingToUse {
-					amountToUse = remainingToUse
-				} else {
-					amountToUse = amountToReserve
-				}
+			if available < resReq.Reserved {
+				return ErrInsufficientResources
 			}
 
 			reservation := models.ResourceReservation{
 				ProjectID:               project.ID,
 				ItemID:                  item.ID,
 				ResourceSpecificationID: spec.ID,
-				ReservedQuantity:        amountToReserve,
-				UsedQuantity:            amountToUse,
+				ReservedQuantity:        resReq.Reserved,
+				UsedQuantity:            resReq.Used,
 			}
 
 			if err := tx.Create(&reservation).Error; err != nil {
 				return ErrDatabaseError
 			}
-
-			remainingToReserve -= amountToReserve
-			remainingToUse -= amountToUse
 		}
-
-		// NOTE(pencelheimer): remainingToUse > 0 after the loop means, that user have used more resources than available
-		// maybe we should do something about it?
 
 		return nil
 	}
-	err := s.db.WithContext(ctx).Transaction(tx_func)
 
+	err := s.db.WithContext(ctx).Transaction(tx_func)
 	if err != nil {
 		return nil, err
 	}
@@ -597,7 +598,13 @@ type UpdateResourceUsageRequest struct {
 	UsedQuantity float32 `json:"used_quantity" validate:"required,gte=0"`
 }
 
-func (s *ProjectService) UpdateResourceUsage(ctx context.Context, auth0ID string, projectID uint, reservationID uint, req UpdateResourceUsageRequest) (*ResourceReservation, error) {
+func (s *ProjectService) UpdateResourceUsage(
+	ctx context.Context,
+	auth0ID string,
+	projectID uint,
+	reservationID uint,
+	req UpdateResourceUsageRequest,
+) (*ResourceReservation, error) {
 	userID, err := s.userService.GetUserIDByAuth0ID(ctx, auth0ID)
 	if err != nil {
 		return nil, err
@@ -886,4 +893,230 @@ func (s *ProjectService) Delete(ctx context.Context, auth0ID string, projectID u
 	}
 
 	return true, nil
+}
+
+type AddReservationRequest struct {
+	ItemID   uint    `json:"item_id" validate:"required"`
+	Reserved float32 `json:"reserved" validate:"required,gt=0"`
+	Used     float32 `json:"used" validate:"gte=0"`
+}
+
+func (s *ProjectService) AddReservation(
+	ctx context.Context,
+	auth0ID string,
+	projectID uint,
+	specID uint,
+	req AddReservationRequest,
+) (*ResourceReservation, error) {
+	if req.Used > req.Reserved {
+		return nil, ErrInvalidQuantity
+	}
+
+	var newReservation models.ResourceReservation
+
+	tx_func := func(tx *gorm.DB) error {
+		userID, err := s.userService.GetUserIDByAuth0ID(ctx, auth0ID)
+		if err != nil {
+			return err
+		}
+
+		var spec models.ResourceSpecification
+		if err := tx.Joins("Project").
+			Where("resource_specifications.id = ? AND resource_specifications.project_id = ?", specID, projectID).
+			Where("Project.user_id = ?", userID).
+			First(&spec).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrResourceSpecificationNotFound
+			}
+			return ErrDatabaseError
+		}
+
+		if spec.Project.State != models.ProjectStateActive {
+			return ErrProjectNotActive
+		}
+
+		var item models.Item
+		if err := tx.Where("id = ? AND item_type_id = ?", req.ItemID, spec.ItemTypeID).
+			First(&item).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrItemMismatch
+			}
+			return ErrDatabaseError
+		}
+
+		var reservedSum float32
+		if err := tx.Model(&models.ResourceReservation{}).
+			Where("item_id = ?", item.ID).
+			Select("COALESCE(SUM(reserved_quantity), 0)").
+			Scan(&reservedSum).Error; err != nil {
+			return ErrDatabaseError
+		}
+
+		available := item.Quantity - reservedSum
+		if available < req.Reserved {
+			return ErrInsufficientResources
+		}
+
+		newReservation = models.ResourceReservation{
+			ProjectID:               projectID,
+			ResourceSpecificationID: specID,
+			ItemID:                  item.ID,
+			ReservedQuantity:        req.Reserved,
+			UsedQuantity:            req.Used,
+		}
+
+		if err := tx.Create(&newReservation).Error; err != nil {
+			return ErrDatabaseError
+		}
+
+		newReservation.Item = item
+		newReservation.Project = spec.Project
+
+		return nil
+	}
+
+	err := s.db.WithContext(ctx).Transaction(tx_func)
+	if err != nil {
+		return nil, err
+	}
+
+	dto := ResourceReservationDTOFromModel(newReservation)
+	return &dto, nil
+}
+
+type UpdateReservationRequest struct {
+	Reserved *float32 `json:"reserved" validate:"omitempty,gt=0"`
+	Used     *float32 `json:"used" validate:"omitempty,gte=0"`
+}
+
+func (s *ProjectService) UpdateReservation(
+	ctx context.Context,
+	auth0ID string,
+	projectID uint,
+	specID uint,
+	reservationID uint,
+	req UpdateReservationRequest,
+) (*ResourceReservation, error) {
+	var reservation models.ResourceReservation
+
+	tx_func := func(tx *gorm.DB) error {
+		userID, err := s.userService.GetUserIDByAuth0ID(ctx, auth0ID)
+		if err != nil {
+			return err
+		}
+
+		if err := tx.Preload("Project").Preload("Item").
+			Where("id = ? AND project_id = ? AND resource_specification_id = ?", reservationID, projectID, specID).
+			First(&reservation).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrResourceSpecificationNotFound
+			}
+			return ErrDatabaseError
+		}
+
+		if reservation.Project.UserID != userID {
+			return ErrProjectNotFound
+		}
+
+		if reservation.Project.State != models.ProjectStateActive {
+			return ErrProjectNotActive
+		}
+
+		newReserved := reservation.ReservedQuantity
+		if req.Reserved != nil {
+			newReserved = *req.Reserved
+		}
+
+		newUsed := reservation.UsedQuantity
+		if req.Used != nil {
+			newUsed = *req.Used
+		}
+
+		if newUsed > newReserved {
+			return ErrInvalidQuantity
+		}
+
+		if req.Reserved != nil && *req.Reserved > reservation.ReservedQuantity {
+			delta := *req.Reserved - reservation.ReservedQuantity
+
+			var totalReservedForItem float32
+			if err := tx.Model(&models.ResourceReservation{}).
+				Where("item_id = ?", reservation.ItemID).
+				Select("COALESCE(SUM(reserved_quantity), 0)").
+				Scan(&totalReservedForItem).Error; err != nil {
+				return ErrDatabaseError
+			}
+
+			currentlyAvailable := reservation.Item.Quantity - totalReservedForItem
+			if currentlyAvailable < delta {
+				return ErrInsufficientResources
+			}
+		}
+
+		if req.Reserved != nil {
+			reservation.ReservedQuantity = *req.Reserved
+		}
+
+		if req.Used != nil {
+			reservation.UsedQuantity = *req.Used
+		}
+
+		if err := tx.Save(&reservation).Error; err != nil {
+			return ErrDatabaseError
+		}
+
+		return nil
+	}
+
+	err := s.db.WithContext(ctx).Transaction(tx_func)
+	if err != nil {
+		return nil, err
+	}
+
+	dto := ResourceReservationDTOFromModel(reservation)
+	return &dto, nil
+}
+
+func (s *ProjectService) DeleteReservation(
+	ctx context.Context,
+	auth0ID string,
+	projectID uint,
+	specID uint,
+	reservationID uint,
+) error {
+	userID, err := s.userService.GetUserIDByAuth0ID(ctx, auth0ID)
+	if err != nil {
+		return err
+	}
+
+	tx_func := func(tx *gorm.DB) error {
+		var reservation models.ResourceReservation
+
+		if err := tx.Preload("Project").
+			Where("id = ? AND project_id = ? AND resource_specification_id = ?", reservationID, projectID, specID).
+			First(&reservation).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrResourceSpecificationNotFound
+			}
+			return ErrDatabaseError
+		}
+
+		if reservation.Project.UserID != userID {
+			return ErrProjectNotFound
+		}
+
+		if reservation.Project.State != models.ProjectStateActive {
+			return ErrProjectNotActive
+		}
+
+		if err := tx.Delete(&reservation).Error; err != nil {
+			return ErrDatabaseError
+		}
+
+		return nil
+	}
+
+	err = s.db.WithContext(ctx).Transaction(tx_func)
+
+	return err
 }

@@ -39,6 +39,11 @@ func (h *ProjectHandler) RegisterRoutes(router *echo.Group, middlewares ...echo.
 	group.PATCH("/:id/actual", h.UpdateActualMetrics)
 	group.POST("/:id/resources", h.AddActiveResource)
 	group.PATCH("/:id/resources/:resId", h.UpdateResourceUsage)
+
+	// Manual Reservation Management
+	group.POST("/:id/resources/:specId/reservations", h.AddReservation)
+	group.PATCH("/:id/resources/:specId/reservations/:resId", h.UpdateReservation)
+	group.DELETE("/:id/resources/:specId/reservations/:resId", h.DeleteReservation)
 }
 
 // Create
@@ -480,4 +485,143 @@ func (h *ProjectHandler) UpdateResourceUsage(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, result)
+}
+
+// AddReservation
+// @Summary      Add manual reservation
+// @Tags         projects
+// @Param        id      path      int                             true  "Project ID"
+// @Param        specId  path      int                             true  "Resource Specification ID"
+// @Param        body    body      services.AddReservationRequest  true  "Reservation Details"
+// @Success      201     {object}  services.ResourceReservation
+// @Router       /projects/{id}/resources/{specId}/reservations [post]
+// @Security     BearerAuth
+func (h *ProjectHandler) AddReservation(c echo.Context) error {
+	projectID, err := GetIDParam(c)
+	if err != nil {
+		return err
+	}
+
+	specID, err := GetIDParamWithName(c, "specId")
+	if err != nil {
+		return err
+	}
+
+	var payload services.AddReservationRequest
+	if err := ParseAndValidatePayload(c, &payload); err != nil {
+		return err
+	}
+
+	auth0ID, err := GetAuth0ID(c)
+	if err != nil {
+		return err
+	}
+
+	result, err := h.service.AddReservation(
+		c.Request().Context(),
+		auth0ID,
+		projectID,
+		specID,
+		payload,
+	)
+	if err != nil {
+		return ServiceErrToHttp(err)
+	}
+
+	return c.JSON(http.StatusCreated, result)
+}
+
+// UpdateReservation
+// @Summary      Update manual reservation
+// @Tags         projects
+// @Param        id      path      int                                true  "Project ID"
+// @Param        specId  path      int                                true  "Resource Specification ID"
+// @Param        resId   path      int                                true  "Reservation ID"
+// @Param        body    body      services.UpdateReservationRequest  true  "Update Details"
+// @Success      200     {object}  services.ResourceReservation
+// @Router       /projects/{id}/resources/{specId}/reservations/{resId} [patch]
+// @Security     BearerAuth
+func (h *ProjectHandler) UpdateReservation(c echo.Context) error {
+	projectID, err := GetIDParam(c)
+	if err != nil {
+		return err
+	}
+
+	specID, err := GetIDParamWithName(c, "specId")
+	if err != nil {
+		return err
+	}
+
+	resID, err := GetIDParamWithName(c, "resId")
+	if err != nil {
+		return err
+	}
+
+	var payload services.UpdateReservationRequest
+	if err := ParseAndValidatePayload(c, &payload); err != nil {
+		return err
+	}
+
+	auth0ID, err := GetAuth0ID(c)
+	if err != nil {
+		return err
+	}
+
+	result, err := h.service.UpdateReservation(
+		c.Request().Context(),
+		auth0ID,
+		projectID,
+		specID,
+		resID,
+		payload,
+	)
+	if err != nil {
+		return ServiceErrToHttp(err)
+	}
+
+	return c.JSON(http.StatusOK, result)
+}
+
+// DeleteReservation
+// @Summary      Delete manual reservation
+// @Tags         projects
+// @Param        id      path      int  true  "Project ID"
+// @Param        specId  path      int  true  "Resource Specification ID"
+// @Param        resId   path      int  true  "Reservation ID"
+// @Success      204     {object}  nil
+// @Router       /projects/{id}/resources/{specId}/reservations/{resId} [delete]
+// @Security     BearerAuth
+func (h *ProjectHandler) DeleteReservation(c echo.Context) error {
+	projectID, err := GetIDParam(c)
+	if err != nil {
+		return err
+	}
+
+	specID, err := GetIDParamWithName(c, "specId")
+	if err != nil {
+		return err
+	}
+
+	resID, err := GetIDParamWithName(c, "resId")
+	if err != nil {
+		return err
+	}
+
+	auth0ID, err := GetAuth0ID(c)
+	if err != nil {
+		return err
+	}
+
+	err = h.service.DeleteReservation(
+		c.Request().Context(),
+		auth0ID,
+		projectID,
+		specID,
+		resID,
+	)
+	if err != nil {
+		return ServiceErrToHttp(err)
+	}
+
+	return c.NoContent(http.StatusNoContent)
 }

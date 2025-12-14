@@ -1549,6 +1549,144 @@ const docTemplate = `{
                 }
             }
         },
+        "/projects/{id}/resources/{specId}/reservations": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "projects"
+                ],
+                "summary": "Add manual reservation",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Project ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Resource Specification ID",
+                        "name": "specId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Reservation Details",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocketeer_internal_app_services.AddReservationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/pocketeer_internal_app_services.ResourceReservation"
+                        }
+                    }
+                }
+            }
+        },
+        "/projects/{id}/resources/{specId}/reservations/{resId}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "projects"
+                ],
+                "summary": "Delete manual reservation",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Project ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Resource Specification ID",
+                        "name": "specId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Reservation ID",
+                        "name": "resId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "projects"
+                ],
+                "summary": "Update manual reservation",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Project ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Resource Specification ID",
+                        "name": "specId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Reservation ID",
+                        "name": "resId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update Details",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocketeer_internal_app_services.UpdateReservationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/pocketeer_internal_app_services.ResourceReservation"
+                        }
+                    }
+                }
+            }
+        },
         "/projects/{id}/start": {
             "post": {
                 "security": [
@@ -2076,19 +2214,35 @@ const docTemplate = `{
                 "message": {}
             }
         },
+        "pocketeer_internal_app_services.ActiveResourceItemRequest": {
+            "type": "object",
+            "required": [
+                "item_id",
+                "reserved"
+            ],
+            "properties": {
+                "item_id": {
+                    "type": "integer"
+                },
+                "reserved": {
+                    "type": "number"
+                },
+                "used": {
+                    "type": "number",
+                    "minimum": 0
+                }
+            }
+        },
         "pocketeer_internal_app_services.AddActiveResourceRequest": {
             "type": "object",
             "required": [
                 "item_type_id",
-                "reserved_quantity",
-                "resource_type"
+                "resource_type",
+                "resources"
             ],
             "properties": {
                 "item_type_id": {
                     "type": "integer"
-                },
-                "reserved_quantity": {
-                    "type": "number"
                 },
                 "resource_type": {
                     "type": "string",
@@ -2097,9 +2251,12 @@ const docTemplate = `{
                         "Instrument"
                     ]
                 },
-                "used_quantity": {
-                    "type": "number",
-                    "minimum": 0
+                "resources": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/pocketeer_internal_app_services.ActiveResourceItemRequest"
+                    }
                 }
             }
         },
@@ -2123,6 +2280,25 @@ const docTemplate = `{
                         "Consumable",
                         "Instrument"
                     ]
+                }
+            }
+        },
+        "pocketeer_internal_app_services.AddReservationRequest": {
+            "type": "object",
+            "required": [
+                "item_id",
+                "reserved"
+            ],
+            "properties": {
+                "item_id": {
+                    "type": "integer"
+                },
+                "reserved": {
+                    "type": "number"
+                },
+                "used": {
+                    "type": "number",
+                    "minimum": 0
                 }
             }
         },
@@ -2773,6 +2949,18 @@ const docTemplate = `{
                 },
                 "user_id": {
                     "type": "integer"
+                }
+            }
+        },
+        "pocketeer_internal_app_services.UpdateReservationRequest": {
+            "type": "object",
+            "properties": {
+                "reserved": {
+                    "type": "number"
+                },
+                "used": {
+                    "type": "number",
+                    "minimum": 0
                 }
             }
         },

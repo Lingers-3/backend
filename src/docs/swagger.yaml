@@ -35,24 +35,37 @@ definitions:
     properties:
       message: {}
     type: object
+  pocketeer_internal_app_services.ActiveResourceItemRequest:
+    properties:
+      item_id:
+        type: integer
+      reserved:
+        type: number
+      used:
+        minimum: 0
+        type: number
+    required:
+    - item_id
+    - reserved
+    type: object
   pocketeer_internal_app_services.AddActiveResourceRequest:
     properties:
       item_type_id:
         type: integer
-      reserved_quantity:
-        type: number
       resource_type:
         enum:
         - Consumable
         - Instrument
         type: string
-      used_quantity:
-        minimum: 0
-        type: number
+      resources:
+        items:
+          $ref: '#/definitions/pocketeer_internal_app_services.ActiveResourceItemRequest'
+        minItems: 1
+        type: array
     required:
     - item_type_id
-    - reserved_quantity
     - resource_type
+    - resources
     type: object
   pocketeer_internal_app_services.AddPlannedResourceRequest:
     properties:
@@ -69,6 +82,19 @@ definitions:
     - item_type_id
     - planned_quantity
     - resource_type
+    type: object
+  pocketeer_internal_app_services.AddReservationRequest:
+    properties:
+      item_id:
+        type: integer
+      reserved:
+        type: number
+      used:
+        minimum: 0
+        type: number
+    required:
+    - item_id
+    - reserved
     type: object
   pocketeer_internal_app_services.CancelProjectRequest:
     properties:
@@ -509,6 +535,14 @@ definitions:
         type: string
       user_id:
         type: integer
+    type: object
+  pocketeer_internal_app_services.UpdateReservationRequest:
+    properties:
+      reserved:
+        type: number
+      used:
+        minimum: 0
+        type: number
     type: object
   pocketeer_internal_app_services.UpdateResourceUsageRequest:
     properties:
@@ -1553,6 +1587,94 @@ paths:
       security:
       - BearerAuth: []
       summary: Update resource usage
+      tags:
+      - projects
+  /projects/{id}/resources/{specId}/reservations:
+    post:
+      parameters:
+      - description: Project ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Resource Specification ID
+        in: path
+        name: specId
+        required: true
+        type: integer
+      - description: Reservation Details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/pocketeer_internal_app_services.AddReservationRequest'
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/pocketeer_internal_app_services.ResourceReservation'
+      security:
+      - BearerAuth: []
+      summary: Add manual reservation
+      tags:
+      - projects
+  /projects/{id}/resources/{specId}/reservations/{resId}:
+    delete:
+      parameters:
+      - description: Project ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Resource Specification ID
+        in: path
+        name: specId
+        required: true
+        type: integer
+      - description: Reservation ID
+        in: path
+        name: resId
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Delete manual reservation
+      tags:
+      - projects
+    patch:
+      parameters:
+      - description: Project ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Resource Specification ID
+        in: path
+        name: specId
+        required: true
+        type: integer
+      - description: Reservation ID
+        in: path
+        name: resId
+        required: true
+        type: integer
+      - description: Update Details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/pocketeer_internal_app_services.UpdateReservationRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pocketeer_internal_app_services.ResourceReservation'
+      security:
+      - BearerAuth: []
+      summary: Update manual reservation
       tags:
       - projects
   /projects/{id}/start:
