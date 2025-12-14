@@ -1,16 +1,8 @@
 // @title           Pocketeer API
 // @version         1.0
 // @description     Inventory management system API
-// @termsOfService  https://pocketeer.linerds.us/terms
 
-// @contact.name   API Support
-// @contact.url    https://pocketeer.linerds.us/support
-// @contact.email  support@pocketeer.linerds.us
-
-// @license.name  MIT
-// @license.url   https://opensource.org/licenses/MIT
-
-// @host      pocketeer-api.linerds.us
+// @host      localhost:3000
 // @BasePath  /api
 
 // @securityDefinitions.apikey BearerAuth
@@ -88,12 +80,20 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to initialize the authenticator: %v", err)
 	}
+
 	userService := services.NewUserService(db)
-	itemTypeHandler := handlers.NewItemTypeHandler(services.NewItemTypeService(db, userService))
-	itemHandler := handlers.NewItemHandler(services.NewItemService(db, userService))
-	tagHandler := handlers.NewTagHandler(services.NewTagService(db, userService))
-	pictureHandler := handlers.NewPictureHandler(services.NewPictureService(db, userService))
+	itemTypeService := services.NewItemTypeService(db, userService)
+	itemService := services.NewItemService(db, userService)
+	tagService := services.NewTagService(db, userService)
+	pictureService := services.NewPictureService(db, userService)
+	projectService := services.NewProjectService(db, userService, itemService)
+
 	userHandler := handlers.NewUserHandler(userService, cfg)
+	itemTypeHandler := handlers.NewItemTypeHandler(itemTypeService)
+	itemHandler := handlers.NewItemHandler(itemService)
+	tagHandler := handlers.NewTagHandler(tagService)
+	pictureHandler := handlers.NewPictureHandler(pictureService)
+	projectHandler := handlers.NewProjectHandler(projectService)
 
 	e := echo.New()
 
@@ -146,6 +146,7 @@ func main() {
 	tagHandler.RegisterRoutes(api, authMiddleware)
 	pictureHandler.RegisterRoutes(api, authMiddleware)
 	userHandler.RegisterRoutes(api, authMiddleware)
+	projectHandler.RegisterRoutes(api, authMiddleware)
 
 	// TODO(noatu): move to config
 	e.Static("/pictures", "/var/pocketeer/img")

@@ -35,6 +35,82 @@ definitions:
     properties:
       message: {}
     type: object
+  pocketeer_internal_app_services.ActiveResourceItemRequest:
+    properties:
+      item_id:
+        type: integer
+      reserved:
+        type: number
+      used:
+        minimum: 0
+        type: number
+    required:
+    - item_id
+    - reserved
+    type: object
+  pocketeer_internal_app_services.AddActiveResourceRequest:
+    properties:
+      item_type_id:
+        type: integer
+      resource_type:
+        enum:
+        - Consumable
+        - Instrument
+        type: string
+      resources:
+        items:
+          $ref: '#/definitions/pocketeer_internal_app_services.ActiveResourceItemRequest'
+        minItems: 1
+        type: array
+    required:
+    - item_type_id
+    - resource_type
+    - resources
+    type: object
+  pocketeer_internal_app_services.AddPlannedResourceRequest:
+    properties:
+      item_type_id:
+        type: integer
+      planned_quantity:
+        type: number
+      resource_type:
+        enum:
+        - Consumable
+        - Instrument
+        type: string
+    required:
+    - item_type_id
+    - planned_quantity
+    - resource_type
+    type: object
+  pocketeer_internal_app_services.AddReservationRequest:
+    properties:
+      item_id:
+        type: integer
+      reserved:
+        type: number
+      used:
+        minimum: 0
+        type: number
+    required:
+    - item_id
+    - reserved
+    type: object
+  pocketeer_internal_app_services.CancelProjectRequest:
+    properties:
+      return_items_to_inventory:
+        type: boolean
+    type: object
+  pocketeer_internal_app_services.CompleteProjectRequest:
+    properties:
+      actual_revenue:
+        minimum: 0
+        type: number
+      finalize_inventory:
+        description: 'NOTE(pencelheimer): If true, remaining reserved but unused items
+          are returned'
+        type: boolean
+    type: object
   pocketeer_internal_app_services.CreateTagRequest:
     properties:
       color:
@@ -78,6 +154,33 @@ definitions:
         type: array
       updated_at:
         type: string
+    type: object
+  pocketeer_internal_app_services.ItemCreateRequest:
+    properties:
+      description:
+        maxLength: 512
+        type: string
+      display_measurement_unit:
+        maxLength: 256
+        type: string
+      expiration_date:
+        type: string
+      item_type_id:
+        type: integer
+      purchase_price:
+        maximum: 1000000
+        minimum: 0
+        type: number
+      quantity:
+        maximum: 1000000
+        minimum: 0
+        type: number
+      tag_ids:
+        items:
+          type: integer
+        type: array
+    required:
+    - item_type_id
     type: object
   pocketeer_internal_app_services.ItemFull:
     properties:
@@ -233,6 +336,170 @@ definitions:
       size:
         type: integer
     type: object
+  pocketeer_internal_app_services.Project:
+    properties:
+      actual_deadline:
+        type: string
+      actual_income:
+        type: number
+      actual_work_time:
+        $ref: '#/definitions/time.Duration'
+      created_at:
+        type: string
+      description:
+        type: string
+      finished_at:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      planned_deadline:
+        type: string
+      planned_income:
+        type: number
+      planned_work_time:
+        $ref: '#/definitions/time.Duration'
+      started_at:
+        type: string
+      state:
+        $ref: '#/definitions/pocketeer_internal_platform_database_models.ProjectState'
+      updated_at:
+        type: string
+    type: object
+  pocketeer_internal_app_services.ProjectActualMetricsRequest:
+    properties:
+      actual_deadline:
+        type: string
+      actual_income:
+        minimum: 0
+        type: number
+      actual_work_time:
+        minimum: 0
+        type: integer
+    type: object
+  pocketeer_internal_app_services.ProjectCreateRequest:
+    properties:
+      description:
+        maxLength: 512
+        type: string
+      name:
+        maxLength: 256
+        minLength: 1
+        type: string
+      planned_deadline:
+        type: string
+      planned_income:
+        minimum: 0
+        type: number
+      planned_work_time:
+        minimum: 0
+        type: integer
+    required:
+    - name
+    type: object
+  pocketeer_internal_app_services.ProjectFull:
+    properties:
+      actual_deadline:
+        type: string
+      actual_income:
+        type: number
+      actual_work_time:
+        $ref: '#/definitions/time.Duration'
+      created_at:
+        type: string
+      description:
+        type: string
+      finished_at:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      planned_deadline:
+        type: string
+      planned_income:
+        type: number
+      planned_work_time:
+        $ref: '#/definitions/time.Duration'
+      specifications:
+        items:
+          $ref: '#/definitions/pocketeer_internal_app_services.ResourceSpecificationFull'
+        type: array
+      started_at:
+        type: string
+      state:
+        $ref: '#/definitions/pocketeer_internal_platform_database_models.ProjectState'
+      updated_at:
+        type: string
+    type: object
+  pocketeer_internal_app_services.ProjectPlanUpdateRequest:
+    properties:
+      planned_deadline:
+        type: string
+      planned_income:
+        minimum: 0
+        type: number
+      planned_work_time:
+        minimum: 0
+        type: integer
+    type: object
+  pocketeer_internal_app_services.ProjectUpdateRequest:
+    properties:
+      description:
+        maxLength: 512
+        type: string
+      name:
+        maxLength: 256
+        minLength: 1
+        type: string
+    type: object
+  pocketeer_internal_app_services.ResourceReservation:
+    properties:
+      id:
+        type: integer
+      item_description:
+        description: 'NOTE(pencelheimer): For convenience'
+        type: string
+      item_id:
+        type: integer
+      reserved_quantity:
+        type: number
+      resource_specification_id:
+        type: integer
+      used_quantity:
+        type: number
+    type: object
+  pocketeer_internal_app_services.ResourceSpecification:
+    properties:
+      id:
+        type: integer
+      item_type_id:
+        type: integer
+      item_type_name:
+        type: string
+      planned_quantity:
+        type: number
+      resource_type:
+        $ref: '#/definitions/pocketeer_internal_platform_database_models.ResourceType'
+    type: object
+  pocketeer_internal_app_services.ResourceSpecificationFull:
+    properties:
+      id:
+        type: integer
+      item_type_id:
+        type: integer
+      item_type_name:
+        type: string
+      planned_quantity:
+        type: number
+      reservations:
+        items:
+          $ref: '#/definitions/pocketeer_internal_app_services.ResourceReservation'
+        type: array
+      resource_type:
+        $ref: '#/definitions/pocketeer_internal_platform_database_models.ResourceType'
+    type: object
   pocketeer_internal_app_services.Tag:
     properties:
       color:
@@ -269,6 +536,22 @@ definitions:
       user_id:
         type: integer
     type: object
+  pocketeer_internal_app_services.UpdateReservationRequest:
+    properties:
+      reserved:
+        type: number
+      used:
+        minimum: 0
+        type: number
+    type: object
+  pocketeer_internal_app_services.UpdateResourceUsageRequest:
+    properties:
+      used_quantity:
+        minimum: 0
+        type: number
+    required:
+    - used_quantity
+    type: object
   pocketeer_internal_app_services.UpdateTagRequest:
     properties:
       color:
@@ -277,20 +560,54 @@ definitions:
         maxLength: 256
         type: string
     type: object
+  pocketeer_internal_platform_database_models.ProjectState:
+    enum:
+    - Planning
+    - Active
+    - Completed
+    - Canceled
+    type: string
+    x-enum-varnames:
+    - ProjectStatePlanning
+    - ProjectStateActive
+    - ProjectStateCompleted
+    - ProjectStateCanceled
+  pocketeer_internal_platform_database_models.ResourceType:
+    enum:
+    - Consumable
+    - Instrument
+    type: string
+    x-enum-varnames:
+    - ResourceTypeConsumable
+    - ResourceTypeInstrument
+  time.Duration:
+    enum:
+    - -9223372036854775808
+    - 9223372036854775807
+    - 1
+    - 1000
+    - 1000000
+    - 1000000000
+    - 60000000000
+    - 3600000000000
+    format: int64
+    type: integer
+    x-enum-varnames:
+    - minDuration
+    - maxDuration
+    - Nanosecond
+    - Microsecond
+    - Millisecond
+    - Second
+    - Minute
+    - Hour
 externalDocs:
   description: OpenAPI Specification
   url: https://swagger.io/resources/open-api/
-host: pocketeer-api.linerds.us
+host: localhost:3000
 info:
-  contact:
-    email: support@pocketeer.linerds.us
-    name: API Support
-    url: https://pocketeer.linerds.us/support
+  contact: {}
   description: Inventory management system API
-  license:
-    name: MIT
-    url: https://opensource.org/licenses/MIT
-  termsOfService: https://pocketeer.linerds.us/terms
   title: Pocketeer API
   version: "1.0"
 paths:
@@ -590,6 +907,41 @@ paths:
       security:
       - BearerAuth: []
       summary: List all items
+      tags:
+      - items
+    post:
+      consumes:
+      - application/json
+      description: Create a new item associated with an item type
+      parameters:
+      - description: Item Creation Request
+        in: body
+        name: item
+        required: true
+        schema:
+          $ref: '#/definitions/pocketeer_internal_app_services.ItemCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/pocketeer_internal_app_services.Item'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+      security:
+      - BearerAuth: []
+      summary: Create a new item
       tags:
       - items
   /items/{id}:
@@ -919,6 +1271,430 @@ paths:
       summary: Get picture metadata
       tags:
       - pictures
+  /projects:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of projects with optional filtering and sorting
+      parameters:
+      - description: Search query
+        in: query
+        name: query
+        type: string
+      - description: Filter by state
+        in: query
+        name: state
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/pocketeer_internal_app_services.Project'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: Search and filter projects
+      tags:
+      - projects
+    post:
+      consumes:
+      - application/json
+      description: Create a new project which is set to 'Planning' state
+      parameters:
+      - description: Project Create Request
+        in: body
+        name: project
+        required: true
+        schema:
+          $ref: '#/definitions/pocketeer_internal_app_services.ProjectCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/pocketeer_internal_app_services.Project'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+      security:
+      - BearerAuth: []
+      summary: Create new project plan
+      tags:
+      - projects
+  /projects/{id}:
+    delete:
+      parameters:
+      - description: Project ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Delete project
+      tags:
+      - projects
+    get:
+      parameters:
+      - description: Project ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pocketeer_internal_app_services.ProjectFull'
+      security:
+      - BearerAuth: []
+      summary: Get project details
+      tags:
+      - projects
+    patch:
+      consumes:
+      - application/json
+      description: Update project name or description
+      parameters:
+      - description: Project ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Update Request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/pocketeer_internal_app_services.ProjectUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pocketeer_internal_app_services.Project'
+      security:
+      - BearerAuth: []
+      summary: Update project details
+      tags:
+      - projects
+  /projects/{id}/actual:
+    patch:
+      parameters:
+      - description: Project ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Metrics Update Request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/pocketeer_internal_app_services.ProjectActualMetricsRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pocketeer_internal_app_services.Project'
+      security:
+      - BearerAuth: []
+      summary: Update actual metrics
+      tags:
+      - projects
+  /projects/{id}/cancel:
+    post:
+      parameters:
+      - description: Project ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Cancel Request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/pocketeer_internal_app_services.CancelProjectRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pocketeer_internal_app_services.Project'
+      security:
+      - BearerAuth: []
+      summary: Cancel project
+      tags:
+      - projects
+  /projects/{id}/complete:
+    post:
+      parameters:
+      - description: Project ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Complete Request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/pocketeer_internal_app_services.CompleteProjectRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pocketeer_internal_app_services.Project'
+      security:
+      - BearerAuth: []
+      summary: Complete project
+      tags:
+      - projects
+  /projects/{id}/plan:
+    put:
+      parameters:
+      - description: Project ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Plan Update Request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/pocketeer_internal_app_services.ProjectPlanUpdateRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pocketeer_internal_app_services.Project'
+      security:
+      - BearerAuth: []
+      summary: Update project plan
+      tags:
+      - projects
+  /projects/{id}/plan/resources:
+    post:
+      parameters:
+      - description: Project ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Resource Spec Request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/pocketeer_internal_app_services.AddPlannedResourceRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pocketeer_internal_app_services.ResourceSpecification'
+      security:
+      - BearerAuth: []
+      summary: Add planned resource
+      tags:
+      - projects
+  /projects/{id}/plan/resources/{specId}:
+    delete:
+      parameters:
+      - description: Project ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Specification ID
+        in: path
+        name: specId
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Remove planned resource
+      tags:
+      - projects
+  /projects/{id}/resources:
+    post:
+      parameters:
+      - description: Project ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Active Resource Request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/pocketeer_internal_app_services.AddActiveResourceRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pocketeer_internal_app_services.ProjectFull'
+      security:
+      - BearerAuth: []
+      summary: Add active resource
+      tags:
+      - projects
+  /projects/{id}/resources/{resId}:
+    patch:
+      parameters:
+      - description: Project ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Reservation ID
+        in: path
+        name: resId
+        required: true
+        type: integer
+      - description: Usage Update Request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/pocketeer_internal_app_services.UpdateResourceUsageRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pocketeer_internal_app_services.ResourceReservation'
+      security:
+      - BearerAuth: []
+      summary: Update resource usage
+      tags:
+      - projects
+  /projects/{id}/resources/{specId}/reservations:
+    post:
+      parameters:
+      - description: Project ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Resource Specification ID
+        in: path
+        name: specId
+        required: true
+        type: integer
+      - description: Reservation Details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/pocketeer_internal_app_services.AddReservationRequest'
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/pocketeer_internal_app_services.ResourceReservation'
+      security:
+      - BearerAuth: []
+      summary: Add manual reservation
+      tags:
+      - projects
+  /projects/{id}/resources/{specId}/reservations/{resId}:
+    delete:
+      parameters:
+      - description: Project ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Resource Specification ID
+        in: path
+        name: specId
+        required: true
+        type: integer
+      - description: Reservation ID
+        in: path
+        name: resId
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Delete manual reservation
+      tags:
+      - projects
+    patch:
+      parameters:
+      - description: Project ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Resource Specification ID
+        in: path
+        name: specId
+        required: true
+        type: integer
+      - description: Reservation ID
+        in: path
+        name: resId
+        required: true
+        type: integer
+      - description: Update Details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/pocketeer_internal_app_services.UpdateReservationRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pocketeer_internal_app_services.ResourceReservation'
+      security:
+      - BearerAuth: []
+      summary: Update manual reservation
+      tags:
+      - projects
+  /projects/{id}/start:
+    post:
+      parameters:
+      - description: Project ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pocketeer_internal_app_services.ProjectFull'
+      security:
+      - BearerAuth: []
+      summary: Start project
+      tags:
+      - projects
   /tags:
     get:
       consumes:
@@ -1119,12 +1895,8 @@ paths:
       produces:
       - application/json
       responses:
-        "200":
-          description: 'message: user deleted successfully'
-          schema:
-            additionalProperties:
-              type: string
-            type: object
+        "204":
+          description: user deleted successfully
         "401":
           description: Unauthorized
           schema:

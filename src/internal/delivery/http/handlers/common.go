@@ -23,15 +23,35 @@ func ServiceErrToHttp(err error) *echo.HTTPError {
 		return echo.NewHTTPError(http.StatusConflict, err)
 	case errors.Is(err, services.ErrImageTooLarge):
 		return echo.NewHTTPError(http.StatusRequestEntityTooLarge, err)
+	case errors.Is(err, services.ErrInsufficientResources):
+		return echo.NewHTTPError(http.StatusUnprocessableEntity, err)
 	case errors.Is(err, services.ErrInvalidImageFormat):
+		return echo.NewHTTPError(http.StatusBadRequest, err)
+	case errors.Is(err, services.ErrInvalidQuantity):
+		return echo.NewHTTPError(http.StatusBadRequest, err)
+	case errors.Is(err, services.ErrItemMismatch):
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	case errors.Is(err, services.ErrItemNotFound):
 		return echo.NewHTTPError(http.StatusNotFound, err)
 	case errors.Is(err, services.ErrItemTypeNotFound):
 		return echo.NewHTTPError(http.StatusNotFound, err)
 	case errors.Is(err, services.ErrNotImplemented):
-		return echo.NewHTTPError(http.StatusInternalServerError, err)
+		return echo.NewHTTPError(http.StatusNotImplemented, err)
 	case errors.Is(err, services.ErrPictureNotFound):
+		return echo.NewHTTPError(http.StatusNotFound, err)
+	case errors.Is(err, services.ErrProjectAlreadyActive):
+		return echo.NewHTTPError(http.StatusConflict, err)
+	case errors.Is(err, services.ErrProjectAlreadyExists):
+		return echo.NewHTTPError(http.StatusConflict, err)
+	case errors.Is(err, services.ErrProjectNotActive):
+		return echo.NewHTTPError(http.StatusConflict, err)
+	case errors.Is(err, services.ErrProjectNotFound):
+		return echo.NewHTTPError(http.StatusNotFound, err)
+	case errors.Is(err, services.ErrProjectNotPlanning):
+		return echo.NewHTTPError(http.StatusConflict, err)
+	case errors.Is(err, services.ErrResourceReservationNotFound):
+		return echo.NewHTTPError(http.StatusNotFound, err)
+	case errors.Is(err, services.ErrResourceSpecificationNotFound):
 		return echo.NewHTTPError(http.StatusNotFound, err)
 	case errors.Is(err, services.ErrTagAlreadyExists):
 		return echo.NewHTTPError(http.StatusConflict, err)
@@ -69,6 +89,14 @@ func ParseAndValidatePayload(c echo.Context, payload any) error {
 
 func GetIDParam(c echo.Context) (uint, error) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		return 0, echo.NewHTTPError(http.StatusBadRequest)
+	}
+	return uint(id), nil
+}
+
+func GetIDParamWithName(c echo.Context, param string) (uint, error) {
+	id, err := strconv.ParseUint(c.Param(param), 10, 64)
 	if err != nil {
 		return 0, echo.NewHTTPError(http.StatusBadRequest)
 	}

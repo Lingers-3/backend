@@ -35,32 +35,6 @@ type Item struct {
 	DeletedAt              *time.Time `json:"deleted_at,omitempty"`
 }
 
-func ItemFromModel(m *models.Item) *Item {
-	var deletedAt *time.Time
-	if m.DeletedAt.Valid {
-		deletedAt = &m.DeletedAt.Time
-	}
-
-	tagIDs := make([]uint, len(m.Tags))
-	for i, tag := range m.Tags {
-		tagIDs[i] = tag.ID
-	}
-
-	return &Item{
-		ID:                     m.ID,
-		Description:            m.Description,
-		Quantity:               m.Quantity,
-		ExpirationDate:         m.ExpirationDate,
-		DisplayMeasurementUnit: m.DisplayMeasurementUnit,
-		PurchasePrice:          m.PurchasePrice,
-		ItemTypeID:             m.ItemTypeID,
-		TagIDs:                 tagIDs,
-		CreatedAt:              m.CreatedAt,
-		UpdatedAt:              m.UpdatedAt,
-		DeletedAt:              deletedAt,
-	}
-}
-
 type ItemFull struct {
 	ID                     uint       `json:"id"`
 	Description            *string    `json:"description"`
@@ -72,25 +46,6 @@ type ItemFull struct {
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
-}
-
-func ItemFullFromModel(m models.Item) ItemFull {
-	tags := make([]Tag, len(m.Tags))
-	for i, t := range m.Tags {
-		tags[i] = TagFromModel(t)
-	}
-
-	return ItemFull{
-		ID:                     m.ID,
-		Description:            m.Description,
-		Quantity:               m.Quantity,
-		ExpirationDate:         m.ExpirationDate,
-		DisplayMeasurementUnit: m.DisplayMeasurementUnit,
-		PurchasePrice:          m.PurchasePrice,
-		Tags:                   tags,
-		CreatedAt:              m.CreatedAt,
-		UpdatedAt:              m.UpdatedAt,
-	}
 }
 
 type ItemCreateRequest struct {

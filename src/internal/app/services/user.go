@@ -72,60 +72,84 @@ func (s *UserService) EnsureActiveUser(ctx context.Context, auth0ID string, emai
 	return user.ID, nil
 }
 
-func (s *UserService) DeleteUserByAuth0ID(ctx context.Context, auth0ID string) (int64, error) {
+func (s *UserService) DeleteUserByAuth0ID(ctx context.Context, auth0ID string) error {
 	var user models.User
 
 	tx := s.db.WithContext(ctx).Begin()
 	if tx.Error != nil {
 		log.Printf("ERROR: Failed to begin transaction: %v", tx.Error)
-		return 0, ErrDatabaseError
+		return ErrDatabaseError
 	}
 
 	err := tx.Unscoped().Where("auth0_id = ?", auth0ID).First(&user).Error
 	if err != nil {
 		tx.Rollback()
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return 0, ErrUserNotFound
+			return ErrUserNotFound
 		}
 		log.Printf("ERROR: Failed to find user with auth0ID %s: %v", auth0ID, err)
-		return 0, ErrDatabaseError
+		return ErrDatabaseError
 	}
 
-	var itemTypeIDs []uint
-	err = tx.Model(&models.ItemType{}).
-		Unscoped().
-		Where("user_id = ?", user.ID).
-		Pluck("id", &itemTypeIDs).Error
-	if err != nil {
+	// ResourceReservations
+	if err := tx.Exec(`
+		DELETE FROM "ResourceReservations"
+		WHERE project_id IN (SELECT id FROM "Projects" WHERE user_id = ?)`, user.ID).Error; err != nil {
 		tx.Rollback()
-		log.Printf("ERROR: Failed to pluck ItemType IDs for user %d: %v", user.ID, err)
-		return 0, ErrDatabaseError
+		log.Printf("ERROR: Failed to delete resource reservations for user %d: %v", user.ID, err)
+		return ErrDatabaseError
 	}
 
-	if len(itemTypeIDs) > 0 {
-		deleteItemsResult := tx.Unscoped().
-			Where("item_type_id IN (?)", itemTypeIDs).
-			Delete(&models.Item{})
+	// ResourceSpecifications
+	if err := tx.Exec(`
+		DELETE FROM "ResourceSpecifications"
+		WHERE project_id IN (SELECT id FROM "Projects" WHERE user_id = ?)`, user.ID).Error; err != nil {
+		tx.Rollback()
+		log.Printf("ERROR: Failed to delete resource specifications for user %d: %v", user.ID, err)
+		return ErrDatabaseError
+	}
 
-		if deleteItemsResult.Error != nil {
-			tx.Rollback()
-			log.Printf("ERROR: Failed to delete related Items for user %d: %v", user.ID, deleteItemsResult.Error)
-			return 0, ErrDatabaseError
-		}
+	// Projects
+	if err := tx.Unscoped().Where("user_id = ?", user.ID).Delete(&models.Project{}).Error; err != nil {
+		tx.Rollback()
+		log.Printf("ERROR: Failed to delete projects for user %d: %v", user.ID, err)
+		return ErrDatabaseError
+	}
+
+	// Items
+	if err := tx.Exec(`
+		DELETE FROM "Items"
+		WHERE item_type_id IN (SELECT id FROM "ItemTypes" WHERE user_id = ?)`, user.ID).Error; err != nil {
+		tx.Rollback()
+		log.Printf("ERROR: Failed to delete items for user %d: %v", user.ID, err)
+		return ErrDatabaseError
+	}
+
+	// ItemTypes
+	if err := tx.Unscoped().Where("user_id = ?", user.ID).Delete(&models.ItemType{}).Error; err != nil {
+		tx.Rollback()
+		log.Printf("ERROR: Failed to delete item types for user %d: %v", user.ID, err)
+		return ErrDatabaseError
+	}
+
+	// Tags
+	if err := tx.Unscoped().Where("user_id = ?", user.ID).Delete(&models.Tag{}).Error; err != nil {
+		tx.Rollback()
+		log.Printf("ERROR: Failed to delete tags for user %d: %v", user.ID, err)
+		return ErrDatabaseError
 	}
 
 	deleteUserResult := tx.Unscoped().Delete(&user)
-
 	if deleteUserResult.Error != nil {
 		tx.Rollback()
 		log.Printf("ERROR: Failed to delete user with ID %d: %v", user.ID, deleteUserResult.Error)
-		return 0, ErrDatabaseError
+		return ErrDatabaseError
 	}
 
 	if err := tx.Commit().Error; err != nil {
 		log.Printf("ERROR: Failed to commit transaction: %v", err)
-		return 0, ErrDatabaseError
+		return ErrDatabaseError
 	}
 
-	return deleteUserResult.RowsAffected, nil
+	return nil
 }

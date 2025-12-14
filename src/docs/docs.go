@@ -9,16 +9,7 @@ const docTemplate = `{
     "info": {
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
-        "termsOfService": "https://pocketeer.linerds.us/terms",
-        "contact": {
-            "name": "API Support",
-            "url": "https://pocketeer.linerds.us/support",
-            "email": "support@pocketeer.linerds.us"
-        },
-        "license": {
-            "name": "MIT",
-            "url": "https://opensource.org/licenses/MIT"
-        },
+        "contact": {},
         "version": "{{.Version}}"
     },
     "host": "{{.Host}}",
@@ -471,6 +462,61 @@ const docTemplate = `{
                             "items": {
                                 "$ref": "#/definitions/pocketeer_internal_app_services.Item"
                             }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/echo.HTTPError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/echo.HTTPError"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create a new item associated with an item type",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "items"
+                ],
+                "summary": "Create a new item",
+                "parameters": [
+                    {
+                        "description": "Item Creation Request",
+                        "name": "item",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocketeer_internal_app_services.ItemCreateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/pocketeer_internal_app_services.Item"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/echo.HTTPError"
                         }
                     },
                     "401": {
@@ -990,6 +1036,687 @@ const docTemplate = `{
                 }
             }
         },
+        "/projects": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get a list of projects with optional filtering and sorting",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "projects"
+                ],
+                "summary": "Search and filter projects",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search query",
+                        "name": "query",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by state",
+                        "name": "state",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/pocketeer_internal_app_services.Project"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create a new project which is set to 'Planning' state",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "projects"
+                ],
+                "summary": "Create new project plan",
+                "parameters": [
+                    {
+                        "description": "Project Create Request",
+                        "name": "project",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocketeer_internal_app_services.ProjectCreateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/pocketeer_internal_app_services.Project"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/echo.HTTPError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/echo.HTTPError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/echo.HTTPError"
+                        }
+                    }
+                }
+            }
+        },
+        "/projects/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "projects"
+                ],
+                "summary": "Get project details",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Project ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/pocketeer_internal_app_services.ProjectFull"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "projects"
+                ],
+                "summary": "Delete project",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Project ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update project name or description",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "projects"
+                ],
+                "summary": "Update project details",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Project ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update Request",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocketeer_internal_app_services.ProjectUpdateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/pocketeer_internal_app_services.Project"
+                        }
+                    }
+                }
+            }
+        },
+        "/projects/{id}/actual": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "projects"
+                ],
+                "summary": "Update actual metrics",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Project ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Metrics Update Request",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocketeer_internal_app_services.ProjectActualMetricsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/pocketeer_internal_app_services.Project"
+                        }
+                    }
+                }
+            }
+        },
+        "/projects/{id}/cancel": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "projects"
+                ],
+                "summary": "Cancel project",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Project ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Cancel Request",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocketeer_internal_app_services.CancelProjectRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/pocketeer_internal_app_services.Project"
+                        }
+                    }
+                }
+            }
+        },
+        "/projects/{id}/complete": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "projects"
+                ],
+                "summary": "Complete project",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Project ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Complete Request",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocketeer_internal_app_services.CompleteProjectRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/pocketeer_internal_app_services.Project"
+                        }
+                    }
+                }
+            }
+        },
+        "/projects/{id}/plan": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "projects"
+                ],
+                "summary": "Update project plan",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Project ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Plan Update Request",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocketeer_internal_app_services.ProjectPlanUpdateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/pocketeer_internal_app_services.Project"
+                        }
+                    }
+                }
+            }
+        },
+        "/projects/{id}/plan/resources": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "projects"
+                ],
+                "summary": "Add planned resource",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Project ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Resource Spec Request",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocketeer_internal_app_services.AddPlannedResourceRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/pocketeer_internal_app_services.ResourceSpecification"
+                        }
+                    }
+                }
+            }
+        },
+        "/projects/{id}/plan/resources/{specId}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "projects"
+                ],
+                "summary": "Remove planned resource",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Project ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Specification ID",
+                        "name": "specId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/projects/{id}/resources": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "projects"
+                ],
+                "summary": "Add active resource",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Project ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Active Resource Request",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocketeer_internal_app_services.AddActiveResourceRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/pocketeer_internal_app_services.ProjectFull"
+                        }
+                    }
+                }
+            }
+        },
+        "/projects/{id}/resources/{resId}": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "projects"
+                ],
+                "summary": "Update resource usage",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Project ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Reservation ID",
+                        "name": "resId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Usage Update Request",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocketeer_internal_app_services.UpdateResourceUsageRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/pocketeer_internal_app_services.ResourceReservation"
+                        }
+                    }
+                }
+            }
+        },
+        "/projects/{id}/resources/{specId}/reservations": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "projects"
+                ],
+                "summary": "Add manual reservation",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Project ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Resource Specification ID",
+                        "name": "specId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Reservation Details",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocketeer_internal_app_services.AddReservationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/pocketeer_internal_app_services.ResourceReservation"
+                        }
+                    }
+                }
+            }
+        },
+        "/projects/{id}/resources/{specId}/reservations/{resId}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "projects"
+                ],
+                "summary": "Delete manual reservation",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Project ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Resource Specification ID",
+                        "name": "specId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Reservation ID",
+                        "name": "resId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "projects"
+                ],
+                "summary": "Update manual reservation",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Project ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Resource Specification ID",
+                        "name": "specId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Reservation ID",
+                        "name": "resId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update Details",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocketeer_internal_app_services.UpdateReservationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/pocketeer_internal_app_services.ResourceReservation"
+                        }
+                    }
+                }
+            }
+        },
+        "/projects/{id}/start": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "projects"
+                ],
+                "summary": "Start project",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Project ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/pocketeer_internal_app_services.ProjectFull"
+                        }
+                    }
+                }
+            }
+        },
         "/tags": {
             "get": {
                 "security": [
@@ -1348,14 +2075,8 @@ const docTemplate = `{
                 ],
                 "summary": "Delete user account",
                 "responses": {
-                    "200": {
-                        "description": "message: user deleted successfully",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
+                    "204": {
+                        "description": "user deleted successfully"
                     },
                     "401": {
                         "description": "Unauthorized",
@@ -1493,6 +2214,115 @@ const docTemplate = `{
                 "message": {}
             }
         },
+        "pocketeer_internal_app_services.ActiveResourceItemRequest": {
+            "type": "object",
+            "required": [
+                "item_id",
+                "reserved"
+            ],
+            "properties": {
+                "item_id": {
+                    "type": "integer"
+                },
+                "reserved": {
+                    "type": "number"
+                },
+                "used": {
+                    "type": "number",
+                    "minimum": 0
+                }
+            }
+        },
+        "pocketeer_internal_app_services.AddActiveResourceRequest": {
+            "type": "object",
+            "required": [
+                "item_type_id",
+                "resource_type",
+                "resources"
+            ],
+            "properties": {
+                "item_type_id": {
+                    "type": "integer"
+                },
+                "resource_type": {
+                    "type": "string",
+                    "enum": [
+                        "Consumable",
+                        "Instrument"
+                    ]
+                },
+                "resources": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/pocketeer_internal_app_services.ActiveResourceItemRequest"
+                    }
+                }
+            }
+        },
+        "pocketeer_internal_app_services.AddPlannedResourceRequest": {
+            "type": "object",
+            "required": [
+                "item_type_id",
+                "planned_quantity",
+                "resource_type"
+            ],
+            "properties": {
+                "item_type_id": {
+                    "type": "integer"
+                },
+                "planned_quantity": {
+                    "type": "number"
+                },
+                "resource_type": {
+                    "type": "string",
+                    "enum": [
+                        "Consumable",
+                        "Instrument"
+                    ]
+                }
+            }
+        },
+        "pocketeer_internal_app_services.AddReservationRequest": {
+            "type": "object",
+            "required": [
+                "item_id",
+                "reserved"
+            ],
+            "properties": {
+                "item_id": {
+                    "type": "integer"
+                },
+                "reserved": {
+                    "type": "number"
+                },
+                "used": {
+                    "type": "number",
+                    "minimum": 0
+                }
+            }
+        },
+        "pocketeer_internal_app_services.CancelProjectRequest": {
+            "type": "object",
+            "properties": {
+                "return_items_to_inventory": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "pocketeer_internal_app_services.CompleteProjectRequest": {
+            "type": "object",
+            "properties": {
+                "actual_revenue": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "finalize_inventory": {
+                    "description": "NOTE(pencelheimer): If true, remaining reserved but unused items are returned",
+                    "type": "boolean"
+                }
+            }
+        },
         "pocketeer_internal_app_services.CreateTagRequest": {
             "type": "object",
             "required": [
@@ -1556,6 +2386,44 @@ const docTemplate = `{
                 },
                 "updated_at": {
                     "type": "string"
+                }
+            }
+        },
+        "pocketeer_internal_app_services.ItemCreateRequest": {
+            "type": "object",
+            "required": [
+                "item_type_id"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "maxLength": 512
+                },
+                "display_measurement_unit": {
+                    "type": "string",
+                    "maxLength": 256
+                },
+                "expiration_date": {
+                    "type": "string"
+                },
+                "item_type_id": {
+                    "type": "integer"
+                },
+                "purchase_price": {
+                    "type": "number",
+                    "maximum": 1000000,
+                    "minimum": 0
+                },
+                "quantity": {
+                    "type": "number",
+                    "maximum": 1000000,
+                    "minimum": 0
+                },
+                "tag_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
                 }
             }
         },
@@ -1785,6 +2653,250 @@ const docTemplate = `{
                 }
             }
         },
+        "pocketeer_internal_app_services.Project": {
+            "type": "object",
+            "properties": {
+                "actual_deadline": {
+                    "type": "string"
+                },
+                "actual_income": {
+                    "type": "number"
+                },
+                "actual_work_time": {
+                    "$ref": "#/definitions/time.Duration"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "finished_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "planned_deadline": {
+                    "type": "string"
+                },
+                "planned_income": {
+                    "type": "number"
+                },
+                "planned_work_time": {
+                    "$ref": "#/definitions/time.Duration"
+                },
+                "started_at": {
+                    "type": "string"
+                },
+                "state": {
+                    "$ref": "#/definitions/pocketeer_internal_platform_database_models.ProjectState"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "pocketeer_internal_app_services.ProjectActualMetricsRequest": {
+            "type": "object",
+            "properties": {
+                "actual_deadline": {
+                    "type": "string"
+                },
+                "actual_income": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "actual_work_time": {
+                    "type": "integer",
+                    "minimum": 0
+                }
+            }
+        },
+        "pocketeer_internal_app_services.ProjectCreateRequest": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "maxLength": 512
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 256,
+                    "minLength": 1
+                },
+                "planned_deadline": {
+                    "type": "string"
+                },
+                "planned_income": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "planned_work_time": {
+                    "type": "integer",
+                    "minimum": 0
+                }
+            }
+        },
+        "pocketeer_internal_app_services.ProjectFull": {
+            "type": "object",
+            "properties": {
+                "actual_deadline": {
+                    "type": "string"
+                },
+                "actual_income": {
+                    "type": "number"
+                },
+                "actual_work_time": {
+                    "$ref": "#/definitions/time.Duration"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "finished_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "planned_deadline": {
+                    "type": "string"
+                },
+                "planned_income": {
+                    "type": "number"
+                },
+                "planned_work_time": {
+                    "$ref": "#/definitions/time.Duration"
+                },
+                "specifications": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/pocketeer_internal_app_services.ResourceSpecificationFull"
+                    }
+                },
+                "started_at": {
+                    "type": "string"
+                },
+                "state": {
+                    "$ref": "#/definitions/pocketeer_internal_platform_database_models.ProjectState"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "pocketeer_internal_app_services.ProjectPlanUpdateRequest": {
+            "type": "object",
+            "properties": {
+                "planned_deadline": {
+                    "type": "string"
+                },
+                "planned_income": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "planned_work_time": {
+                    "type": "integer",
+                    "minimum": 0
+                }
+            }
+        },
+        "pocketeer_internal_app_services.ProjectUpdateRequest": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "maxLength": 512
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 256,
+                    "minLength": 1
+                }
+            }
+        },
+        "pocketeer_internal_app_services.ResourceReservation": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "item_description": {
+                    "description": "NOTE(pencelheimer): For convenience",
+                    "type": "string"
+                },
+                "item_id": {
+                    "type": "integer"
+                },
+                "reserved_quantity": {
+                    "type": "number"
+                },
+                "resource_specification_id": {
+                    "type": "integer"
+                },
+                "used_quantity": {
+                    "type": "number"
+                }
+            }
+        },
+        "pocketeer_internal_app_services.ResourceSpecification": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "item_type_id": {
+                    "type": "integer"
+                },
+                "item_type_name": {
+                    "type": "string"
+                },
+                "planned_quantity": {
+                    "type": "number"
+                },
+                "resource_type": {
+                    "$ref": "#/definitions/pocketeer_internal_platform_database_models.ResourceType"
+                }
+            }
+        },
+        "pocketeer_internal_app_services.ResourceSpecificationFull": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "item_type_id": {
+                    "type": "integer"
+                },
+                "item_type_name": {
+                    "type": "string"
+                },
+                "planned_quantity": {
+                    "type": "number"
+                },
+                "reservations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/pocketeer_internal_app_services.ResourceReservation"
+                    }
+                },
+                "resource_type": {
+                    "$ref": "#/definitions/pocketeer_internal_platform_database_models.ResourceType"
+                }
+            }
+        },
         "pocketeer_internal_app_services.Tag": {
             "type": "object",
             "properties": {
@@ -1840,6 +2952,30 @@ const docTemplate = `{
                 }
             }
         },
+        "pocketeer_internal_app_services.UpdateReservationRequest": {
+            "type": "object",
+            "properties": {
+                "reserved": {
+                    "type": "number"
+                },
+                "used": {
+                    "type": "number",
+                    "minimum": 0
+                }
+            }
+        },
+        "pocketeer_internal_app_services.UpdateResourceUsageRequest": {
+            "type": "object",
+            "required": [
+                "used_quantity"
+            ],
+            "properties": {
+                "used_quantity": {
+                    "type": "number",
+                    "minimum": 0
+                }
+            }
+        },
         "pocketeer_internal_app_services.UpdateTagRequest": {
             "type": "object",
             "properties": {
@@ -1851,6 +2987,56 @@ const docTemplate = `{
                     "maxLength": 256
                 }
             }
+        },
+        "pocketeer_internal_platform_database_models.ProjectState": {
+            "type": "string",
+            "enum": [
+                "Planning",
+                "Active",
+                "Completed",
+                "Canceled"
+            ],
+            "x-enum-varnames": [
+                "ProjectStatePlanning",
+                "ProjectStateActive",
+                "ProjectStateCompleted",
+                "ProjectStateCanceled"
+            ]
+        },
+        "pocketeer_internal_platform_database_models.ResourceType": {
+            "type": "string",
+            "enum": [
+                "Consumable",
+                "Instrument"
+            ],
+            "x-enum-varnames": [
+                "ResourceTypeConsumable",
+                "ResourceTypeInstrument"
+            ]
+        },
+        "time.Duration": {
+            "type": "integer",
+            "format": "int64",
+            "enum": [
+                -9223372036854775808,
+                9223372036854775807,
+                1,
+                1000,
+                1000000,
+                1000000000,
+                60000000000,
+                3600000000000
+            ],
+            "x-enum-varnames": [
+                "minDuration",
+                "maxDuration",
+                "Nanosecond",
+                "Microsecond",
+                "Millisecond",
+                "Second",
+                "Minute",
+                "Hour"
+            ]
         }
     },
     "securityDefinitions": {
@@ -1870,7 +3056,7 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "pocketeer-api.linerds.us",
+	Host:             "localhost:3000",
 	BasePath:         "/api",
 	Schemes:          []string{},
 	Title:            "Pocketeer API",
