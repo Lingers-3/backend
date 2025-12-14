@@ -28,13 +28,13 @@ import (
 	"log"
 	"net/http"
 
+	_ "pocketeer/docs"
 	"pocketeer/internal/app/services"
 	"pocketeer/internal/config"
 	"pocketeer/internal/delivery/http/handlers"
+	internalMiddleware "pocketeer/internal/delivery/http/middleware"
 	"pocketeer/internal/platform/authenticator"
 	"pocketeer/internal/platform/database"
-	_ "pocketeer/docs"
-	internalMiddleware "pocketeer/internal/delivery/http/middleware"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/sessions"
@@ -147,6 +147,8 @@ func main() {
 	pictureHandler.RegisterRoutes(api, authMiddleware)
 	userHandler.RegisterRoutes(api, authMiddleware)
 
+	// TODO(noatu): move to config
+	e.Static("/pictures", "/var/pocketeer/img")
 	e.GET("/swagger/*", echoSwagger.WrapHandler)
 
 	e.Logger.Fatal(e.Start(fmt.Sprintf("%s:%s", cfg.AppAddress, cfg.AppPort)))

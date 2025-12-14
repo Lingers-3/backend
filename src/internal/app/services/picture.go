@@ -17,7 +17,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// QUESTION(noatu): move that to Config or nah?
+// TODO(noatu): move to config
 const (
 	MaxImageSize   = 10 * 1024 * 1024 // 10MiB
 	ImageDirectory = "/var/pocketeer/img"
@@ -39,23 +39,25 @@ func NewPictureService(db *database.DB, userService *UserService) *PictureServic
 	return &PictureService{db, userService}
 }
 
-type PictureInfo struct {
+type Picture struct {
 	ID               uint   `json:"id"`
+	Hash             string `json:"hash"`
 	OriginalFilename string `json:"original_filename"`
 	MimeType         string `json:"mime_type"`
 	Size             int64  `json:"size"`
 }
 
-func pictureInfoFromModel(m *models.Picture) *PictureInfo {
-	return &PictureInfo{
+func pictureFromModel(m *models.Picture) *Picture {
+	return &Picture{
 		ID:               m.ID,
+		Hash:             m.Hash,
 		OriginalFilename: m.OriginalFilename,
 		MimeType:         m.MimeType,
 		Size:             m.Size,
 	}
 }
 
-func (s *PictureService) Upload(ctx context.Context, auth0ID string, fileHeader *multipart.FileHeader) (*PictureInfo, error) {
+func (s *PictureService) Upload(ctx context.Context, auth0ID string, fileHeader *multipart.FileHeader) (*Picture, error) {
 	// Need to be authenticated to upload images, and then be authorized to delete them
 	userID, err := s.userService.GetUserIDByAuth0ID(ctx, auth0ID)
 	if err != nil {
@@ -81,8 +83,7 @@ func (s *PictureService) Upload(ctx context.Context, auth0ID string, fileHeader 
 	}
 
 	mimeType := detectMimeType(content)
-	ext, ok := allowedMimeTypes[mimeType]
-	if !ok {
+	if _, ok := allowedMimeTypes[mimeType]; ok {
 		return nil, ErrInvalidImageFormat
 	}
 
@@ -97,7 +98,7 @@ func (s *PictureService) Upload(ctx context.Context, auth0ID string, fileHeader 
 	// NOTE(noatu): better to write the file first and then fail at database
 	// than write to db and fail to write the file. Besides, most of the time
 	// user would try to upload the same file again, so checking if it exists:
-	filepath := filepath.Join(ImageDirectory, hashStr+ext)
+	filepath := filepath.Join(ImageDirectory, hashStr)
 	if _, err := os.Stat(filepath); os.IsNotExist(err) {
 		if err := os.WriteFile(filepath, content, 0644); err != nil {
 			log.Printf("ERROR: writing file to disk: %v", err)
@@ -112,7 +113,7 @@ func (s *PictureService) Upload(ctx context.Context, auth0ID string, fileHeader 
 		First(&picture).Error
 	if err == nil {
 		// Record already exists for the user
-		return pictureInfoFromModel(&picture), nil
+		return pictureFromModel(&picture), nil
 	}
 
 	if !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -134,11 +135,11 @@ func (s *PictureService) Upload(ctx context.Context, auth0ID string, fileHeader 
 		return nil, ErrDatabaseError
 	}
 
-	return pictureInfoFromModel(&picture), nil
+	return pictureFromModel(&picture), nil
 }
 
 // Retrieve picture metadata
-func (s *PictureService) Get(ctx context.Context, auth0ID string, pictureID uint) (*PictureInfo, error) {
+func (s *PictureService) Get(ctx context.Context, auth0ID string, pictureID uint) (*Picture, error) {
 	userID, err := s.userService.GetUserIDByAuth0ID(ctx, auth0ID)
 	if err != nil {
 		return nil, err
@@ -157,48 +158,7 @@ func (s *PictureService) Get(ctx context.Context, auth0ID string, pictureID uint
 		return nil, ErrDatabaseError
 	}
 
-	return pictureInfoFromModel(&picture), nil
-}
-
-type PictureFile struct {
-	Filename string
-	MimeType string
-	Content  []byte
-}
-
-// Retrieves the file content with some metadata
-func (s *PictureService) GetFile(ctx context.Context, auth0ID string, pictureID uint) (*PictureFile, error) {
-	userID, err := s.userService.GetUserIDByAuth0ID(ctx, auth0ID)
-	if err != nil {
-		return nil, err
-	}
-
-	var picture models.Picture
-	err = s.db.WithContext(ctx).
-		Where("id = ? AND user_id = ?", pictureID, userID).
-		First(&picture).Error
-
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrPictureNotFound
-		}
-		log.Printf("ERROR: fetching picture: %v", err)
-		return nil, ErrDatabaseError
-	}
-
-	ext := allowedMimeTypes[picture.MimeType]
-	filepath := filepath.Join(ImageDirectory, picture.Hash+ext)
-	content, err := os.ReadFile(filepath)
-	if err != nil {
-		log.Printf("ERROR: reading image file: %v", err)
-		return nil, ErrFileSystemError
-	}
-
-	return &PictureFile{
-		Filename: picture.OriginalFilename,
-		MimeType: picture.MimeType,
-		Content:  content,
-	}, nil
+	return pictureFromModel(&picture), nil
 }
 
 func (s *PictureService) Delete(ctx context.Context, auth0ID string, pictureID uint) error {
@@ -253,8 +213,7 @@ func (s *PictureService) Delete(ctx context.Context, auth0ID string, pictureID u
 		// Continue anyway, DB record already deleted
 	}
 	if count == 0 {
-		ext := allowedMimeTypes[picture.MimeType]
-		filepath := filepath.Join(ImageDirectory, picture.Hash+ext)
+		filepath := filepath.Join(ImageDirectory, picture.Hash)
 		if err := os.Remove(filepath); err != nil {
 			log.Printf("WARNING: failed to delete image file %s: %v", filepath, err)
 			// IGNORE error, DB record is already deleted

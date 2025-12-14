@@ -19,8 +19,7 @@ func NewPictureHandler(service *services.PictureService) *PictureHandler {
 func (h *PictureHandler) RegisterRoutes(router *echo.Group, middlewares ...echo.MiddlewareFunc) {
 	group := router.Group("/pictures", middlewares...)
 	group.POST("", h.Upload)
-	group.GET("/:id", h.GetFile)
-	group.GET("/:id/info", h.GetInfo)
+	group.GET("/:id", h.Get)
 	group.DELETE("/:id", h.Delete)
 }
 
@@ -31,7 +30,7 @@ func (h *PictureHandler) RegisterRoutes(router *echo.Group, middlewares ...echo.
 // @Accept       multipart/form-data
 // @Produce      json
 // @Param        image  formData  file  true  "Image file to upload"
-// @Success      201    {object}  services.PictureInfo
+// @Success      201    {object}  services.Picture
 // @Failure      400    {object}  echo.HTTPError  "Invalid file or image file required"
 // @Failure      401    {object}  echo.HTTPError
 // @Failure      413    {object}  echo.HTTPError  "Image too large (max 10MB)"
@@ -58,59 +57,21 @@ func (h *PictureHandler) Upload(c echo.Context) error {
 	return c.JSON(http.StatusCreated, result)
 }
 
-// GetFile retrieves the picture file content
-// @Summary      Get picture file
-// @Description  Download the actual image file content
-// @Tags         pictures
-// @Produce      image/jpeg
-// @Produce      image/png
-// @Produce      image/webp
-// @Produce      image/gif
-// @Param        id   path  int  true  "Picture ID"
-// @Success      200  {file}  binary  "Image file"
-// @Failure      400  {object}  echo.HTTPError
-// @Failure      401  {object}  echo.HTTPError
-// @Failure      404  {object}  echo.HTTPError
-// @Failure      500  {object}  echo.HTTPError
-// @Router       /pictures/{id} [get]
-// @Security     BearerAuth
-func (h *PictureHandler) GetFile(c echo.Context) error {
-	ID, err := GetIDParam(c)
-	if err != nil {
-		return err
-	}
-
-	auth0ID, err := GetAuth0ID(c)
-	if err != nil {
-		return err
-	}
-
-	pictureFile, err := h.service.GetFile(c.Request().Context(), auth0ID, ID)
-	if err != nil {
-		return ServiceErrToHttp(err)
-	}
-
-	c.Response().Header().Set("Content-Type", pictureFile.MimeType)
-	c.Response().Header().Set("Content-Disposition", "inline; filename=\""+pictureFile.Filename+"\"")
-
-	return c.Blob(http.StatusOK, pictureFile.MimeType, pictureFile.Content)
-}
-
-// GetInfo retrieves picture metadata
+// Get retrieves picture metadata
 // @Summary      Get picture metadata
 // @Description  Retrieve metadata information about a picture without downloading the file
 // @Tags         pictures
 // @Accept       json
 // @Produce      json
 // @Param        id   path      int  true  "Picture ID"
-// @Success      200  {object}  services.PictureInfo
+// @Success      200  {object}  services.Picture
 // @Failure      400  {object}  echo.HTTPError
 // @Failure      401  {object}  echo.HTTPError
 // @Failure      404  {object}  echo.HTTPError
 // @Failure      500  {object}  echo.HTTPError
-// @Router       /pictures/{id}/info [get]
+// @Router       /pictures/{id} [get]
 // @Security     BearerAuth
-func (h *PictureHandler) GetInfo(c echo.Context) error {
+func (h *PictureHandler) Get(c echo.Context) error {
 	ID, err := GetIDParam(c)
 	if err != nil {
 		return err

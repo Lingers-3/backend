@@ -31,6 +31,7 @@ type ItemType struct { //  ∠( ᐛ 」∠)
 	DefaultQuantity        *float32   `json:"default_quantity"`
 	ShortageTreshold       *float32   `json:"shortage_threshold"`
 	PictureID              *uint      `json:"picture_id,omitempty"`
+	PictureHash            *string    `json:"picture_hash,omitempty"`
 	ItemIDs                []uint     `json:"item_ids"`
 	TagIDs                 []uint     `json:"tag_ids"`
 	CreatedAt              time.Time  `json:"created_at"`
@@ -54,6 +55,11 @@ func ItemTypeFromModel(m *models.ItemType) *ItemType {
 		tagIDs[i] = tag.ID
 	}
 
+	var pictureHash *string
+	if m.Picture != nil {
+		pictureHash = &m.Picture.Hash
+	}
+
 	return &ItemType{
 		ID:                     m.ID,
 		Name:                   m.Name,
@@ -63,6 +69,7 @@ func ItemTypeFromModel(m *models.ItemType) *ItemType {
 		DefaultQuantity:        m.DefaultQuantity,
 		ShortageTreshold:       m.ShortageThreshold,
 		PictureID:              m.PictureID,
+		PictureHash:            pictureHash,
 		ItemIDs:                itemIDs,
 		TagIDs:                 tagIDs,
 		CreatedAt:              m.CreatedAt,
@@ -80,6 +87,7 @@ type ItemTypeFull struct {
 	DefaultQuantity        *float32 `json:"default_quantity"`
 	ShortageThreshold      *float32 `json:"shortage_threshold"`
 	PictureID              *uint    `json:"picture_id,omitempty"`
+	PictureHash            *string  `json:"picture_hash,omitempty"`
 
 	Items []ItemFull `json:"items"`
 	Tags  []Tag      `json:"tags"`
@@ -99,6 +107,11 @@ func ItemTypeFullFromModel(m *models.ItemType) *ItemTypeFull {
 		tags[i] = TagFromModel(tag)
 	}
 
+	var pictureHash *string
+	if m.Picture != nil {
+		pictureHash = &m.Picture.Hash
+	}
+
 	return &ItemTypeFull{
 		ID:                     m.ID,
 		Name:                   m.Name,
@@ -108,6 +121,7 @@ func ItemTypeFullFromModel(m *models.ItemType) *ItemTypeFull {
 		DefaultQuantity:        m.DefaultQuantity,
 		ShortageThreshold:      m.ShortageThreshold,
 		PictureID:              m.PictureID,
+		PictureHash:            pictureHash,
 		Items:                  items,
 		Tags:                   tags,
 		CreatedAt:              m.CreatedAt,
@@ -192,6 +206,7 @@ func (s *ItemTypeService) Get(ctx context.Context, auth0ID string, itemTypeID ui
 		Preload("Tags", func(db *gorm.DB) *gorm.DB {
 			return db.Select("id")
 		}).
+		Preload("Picture").
 		Where("id = ? AND user_id = ?", itemTypeID, userID).
 		First(&itemType).Error
 	if err != nil {
@@ -221,6 +236,7 @@ func (s *ItemTypeService) GetAll(ctx context.Context, auth0ID string) ([]*ItemTy
 		Preload("Tags", func(db *gorm.DB) *gorm.DB {
 			return db.Select("id")
 		}).
+		Preload("Picture").
 		Where("user_id = ?", userID).Find(&itemTypes).Error
 	if err != nil {
 		log.Printf("ERROR: fetching item types: %v", err)
@@ -385,6 +401,7 @@ func (s *ItemTypeService) GetAllFull(ctx context.Context, auth0ID string) ([]*It
 		Preload("Tags").
 		Preload("Items").
 		Preload("Items.Tags").
+		Preload("Picture").
 		Where("user_id = ?", userID).
 		Find(&itemTypes).Error
 
