@@ -8,7 +8,6 @@ import (
 	"pocketeer/internal/platform/database"
 	"pocketeer/internal/platform/database/models"
 
-	"github.com/lib/pq"
 	"gorm.io/gorm"
 )
 
@@ -66,51 +65,6 @@ type TemplateService struct {
 
 func NewTemplateService(db *database.DB, userService *UserService, projectService *ProjectService) *TemplateService {
 	return &TemplateService{db, userService, projectService}
-}
-
-func TemplateResourceSpecificationFromModel(m models.TemplateResourceSpecification) TemplateResourceSpecification {
-	return TemplateResourceSpecification{
-		ID:              m.ID,
-		TemplateID:      m.TemplateID,
-		ItemTypeID:      m.ItemTypeID,
-		ItemTypeName:    m.ItemType.Name,
-		PlannedQuantity: m.PlannedQuantity,
-	}
-}
-
-func TemplateFromModel(m *models.ProjectTemplate) *Template {
-	var workTime *time.Duration
-	if m.PlannedWorkTime.Microseconds() != 0 {
-		val := time.Duration(m.PlannedWorkTime.Microseconds()) * time.Microsecond
-		workTime = &val
-	}
-
-	var income *float32
-	if m.PlannedIncome != nil {
-		income = m.PlannedIncome
-	}
-
-	return &Template{
-		ID:              m.ID,
-		Name:            m.Name,
-		Description:     m.Description,
-		PlannedWorkTime: workTime,
-		PlannedIncome:   income,
-		UsageCount:      m.UsageCount,
-		CreatedAt:       m.CreatedAt,
-		UpdatedAt:       m.UpdatedAt,
-	}
-}
-
-func TemplateFullFromModel(m *models.ProjectTemplate) *TemplateFull {
-	full := TemplateFull{
-		Template:       *TemplateFromModel(m),
-		Specifications: make([]TemplateResourceSpecification, len(m.RequiredResources)),
-	}
-	for i, spec := range m.RequiredResources {
-		full.Specifications[i] = TemplateResourceSpecificationFromModel(spec)
-	}
-	return &full
 }
 
 func (s *TemplateService) Create(ctx context.Context, auth0ID string, req TemplateCreateRequest) (*Template, error) {
@@ -441,6 +395,16 @@ func (s *TemplateService) AddPlannedResource(
 		return nil, ErrDatabaseError
 	}
 
+	var existingSpec models.TemplateResourceSpecification
+	err = s.db.WithContext(ctx).
+		Select("id").
+		Where("template_id = ? AND item_type_id = ?", templateID, req.ItemTypeID).
+		First(&existingSpec).Error
+
+	if err == nil {
+		return nil, ErrTemplateResourceAlreadyExists
+	}
+
 	templ := models.TemplateResourceSpecification{
 		TemplateID:      templateID,
 		ItemTypeID:      req.ItemTypeID,
@@ -448,9 +412,6 @@ func (s *TemplateService) AddPlannedResource(
 		PlannedQuantity: req.PlannedQuantity,
 	}
 	if err := s.db.WithContext(ctx).Create(&templ).Error; err != nil {
-		if isUniqueConstraintError(err) {
-			return nil, ErrTemplateResourceAlreadyExists
-		}
 		return nil, ErrDatabaseError
 	}
 
@@ -496,12 +457,4 @@ func (s *TemplateService) RemovePlannedResource(
 	}
 
 	return true, nil
-}
-
-func isUniqueConstraintError(err error) bool {
-	var pgErr *pq.Error
-	if errors.As(err, &pgErr) {
-		return pgErr.Code == "23505"
-	}
-	return false
 }

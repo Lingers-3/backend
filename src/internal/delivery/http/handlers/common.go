@@ -57,6 +57,14 @@ func ServiceErrToHttp(err error) *echo.HTTPError {
 		return echo.NewHTTPError(http.StatusConflict, err)
 	case errors.Is(err, services.ErrTagNotFound):
 		return echo.NewHTTPError(http.StatusNotFound, err)
+	case errors.Is(services.ErrTemplateNotFound, err):
+		return echo.NewHTTPError(http.StatusNotFound, err)
+	case errors.Is(services.ErrTemplateNameAlreadyExists, err):
+		return echo.NewHTTPError(http.StatusConflict, err)
+	case errors.Is(services.ErrTemplateResourceAlreadyExists, err):
+		return echo.NewHTTPError(http.StatusConflict, err)
+	case errors.Is(services.ErrTemplateServiceInvalidSort, err):
+		return echo.NewHTTPError(http.StatusBadRequest, err)
 	case errors.Is(err, services.ErrUnauthenticated):
 		return echo.NewHTTPError(http.StatusUnauthorized, err)
 	case errors.Is(err, services.ErrUserNotFound):

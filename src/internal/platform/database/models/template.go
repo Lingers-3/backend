@@ -20,7 +20,7 @@ type ProjectTemplate struct {
 
 	UsageCount int64
 
-	RequiredResources []TemplateResourceSpecification `gorm:"foreignKey:TemplateID"`
+	ResourceSpecifications []TemplateResourceSpecification `gorm:"foreignKey:TemplateID"`
 }
 
 func (ProjectTemplate) TableName() string {
