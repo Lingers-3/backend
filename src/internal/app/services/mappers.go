@@ -234,3 +234,37 @@ func ProjectFromModel(m *models.Project) *Project {
 		UpdatedAt:       m.UpdatedAt,
 	}
 }
+
+func TemplateResourceSpecificationFromModel(m models.TemplateResourceSpecification) TemplateResourceSpecification {
+	return TemplateResourceSpecification{
+		ID:              m.ID,
+		TemplateID:      m.TemplateID,
+		ItemTypeID:      m.ItemTypeID,
+		ItemTypeName:    m.ItemType.Name,
+		PlannedQuantity: m.PlannedQuantity,
+	}
+}
+
+func TemplateFromModel(m *models.ProjectTemplate) *Template {
+	return &Template{
+		ID:              m.ID,
+		Name:            m.Name,
+		Description:     m.Description,
+		PlannedWorkTime: m.PlannedWorkTime,
+		PlannedIncome:   m.PlannedIncome,
+		UsageCount:      m.UsageCount,
+		CreatedAt:       m.CreatedAt,
+		UpdatedAt:       m.UpdatedAt,
+	}
+}
+
+func TemplateFullFromModel(m *models.ProjectTemplate) *TemplateFull {
+	full := TemplateFull{
+		Template:       *TemplateFromModel(m),
+		Specifications: make([]TemplateResourceSpecification, len(m.ResourceSpecifications)),
+	}
+	for i, spec := range m.ResourceSpecifications {
+		full.Specifications[i] = TemplateResourceSpecificationFromModel(spec)
+	}
+	return &full
+}

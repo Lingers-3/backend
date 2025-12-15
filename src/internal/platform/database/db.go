@@ -66,7 +66,7 @@ func Init(cfg *config.Config) (db *DB, err error) {
 		&models.ResourceSpecification{},
 		&models.ResourceReservation{},
 		&models.Project{},
-
+		&models.TemplateResourceSpecification{},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to run migrations: %v", err)
