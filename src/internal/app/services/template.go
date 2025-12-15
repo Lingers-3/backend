@@ -42,6 +42,10 @@ type TemplateCreateRequest struct {
 	PlannedIncome   *float32 `json:"planned_income" validate:"omitempty,gte=0"`
 }
 
+type TemplateFromProjectRequest struct {
+	Name string `json:"name" validate:"required,min=3,max=256"`
+}
+
 type TemplateUpdateRequest struct {
 	Name            string   `json:"name" validate:"omitempty,min=3,max=256"`
 	Description     *string  `json:"description" validate:"omitempty,max=512"`

@@ -846,7 +846,7 @@
                 }
             }
         },
-        "/pictures/{hash}": {
+        "/pictures/static/{hash}": {
             "get": {
                 "description": "Serves an image file from the static directory",
                 "produces": [
@@ -1983,6 +1983,340 @@
                 }
             }
         },
+        "/templates": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "templates"
+                ],
+                "summary": "Search and filter templates",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search query",
+                        "name": "query",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort by column (name, usage_count, etc.)",
+                        "name": "sort_by",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort order (asc or desc)",
+                        "name": "sort_order",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Items per page (default 20)",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/pocketeer_internal_app_services.Template"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create a new template for future projects",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "templates"
+                ],
+                "summary": "Create new project template",
+                "parameters": [
+                    {
+                        "description": "Template Create Request",
+                        "name": "template",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocketeer_internal_app_services.TemplateCreateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/pocketeer_internal_app_services.Template"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/echo.HTTPError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/echo.HTTPError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/echo.HTTPError"
+                        }
+                    }
+                }
+            }
+        },
+        "/templates/from-project/{projectId}": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Creates a new template by copying plan/actual metrics and resource specs from a project",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "templates"
+                ],
+                "summary": "Create template from an existing project",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Project ID",
+                        "name": "projectId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Template Name Request",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocketeer_internal_app_services.TemplateFromProjectRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/pocketeer_internal_app_services.Template"
+                        }
+                    }
+                }
+            }
+        },
+        "/templates/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "templates"
+                ],
+                "summary": "Get template details",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Template ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/pocketeer_internal_app_services.TemplateFull"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "templates"
+                ],
+                "summary": "Delete template",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Template ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "templates"
+                ],
+                "summary": "Update template details",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Template ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update Request",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocketeer_internal_app_services.TemplateUpdateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/pocketeer_internal_app_services.Template"
+                        }
+                    }
+                }
+            }
+        },
+        "/templates/{id}/resources": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "templates"
+                ],
+                "summary": "Add planned resource to template",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Template ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Resource Spec Request",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocketeer_internal_app_services.AddPlannedResourceRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/pocketeer_internal_app_services.TemplateResourceSpecification"
+                        }
+                    }
+                }
+            }
+        },
+        "/templates/{id}/resources/{specId}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "templates"
+                ],
+                "summary": "Remove planned resource from template",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Template ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Specification ID",
+                        "name": "specId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
         "/user/me": {
             "get": {
                 "security": [
@@ -2349,6 +2683,9 @@
                 "quantity": {
                     "type": "number"
                 },
+                "reserved_quantity": {
+                    "type": "number"
+                },
                 "tag_ids": {
                     "type": "array",
                     "items": {
@@ -2420,6 +2757,9 @@
                     "type": "number"
                 },
                 "quantity": {
+                    "type": "number"
+                },
+                "reserved_quantity": {
                     "type": "number"
                 },
                 "tags": {
@@ -2932,6 +3272,150 @@
                 }
             }
         },
+        "pocketeer_internal_app_services.Template": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "planned_income": {
+                    "type": "number"
+                },
+                "planned_work_time": {
+                    "$ref": "#/definitions/time.Duration"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "usage_count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "pocketeer_internal_app_services.TemplateCreateRequest": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "maxLength": 512
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 256,
+                    "minLength": 3
+                },
+                "planned_income": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "planned_work_time": {
+                    "type": "integer",
+                    "minimum": 0
+                }
+            }
+        },
+        "pocketeer_internal_app_services.TemplateFromProjectRequest": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "maxLength": 256,
+                    "minLength": 3
+                }
+            }
+        },
+        "pocketeer_internal_app_services.TemplateFull": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "planned_income": {
+                    "type": "number"
+                },
+                "planned_work_time": {
+                    "$ref": "#/definitions/time.Duration"
+                },
+                "specifications": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/pocketeer_internal_app_services.TemplateResourceSpecification"
+                    }
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "usage_count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "pocketeer_internal_app_services.TemplateResourceSpecification": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "item_type_id": {
+                    "type": "integer"
+                },
+                "item_type_name": {
+                    "type": "string"
+                },
+                "planned_quantity": {
+                    "type": "number"
+                },
+                "template_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "pocketeer_internal_app_services.TemplateUpdateRequest": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "maxLength": 512
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 256,
+                    "minLength": 3
+                },
+                "planned_income": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "planned_work_time": {
+                    "type": "integer",
+                    "minimum": 0
+                }
+            }
+        },
         "pocketeer_internal_app_services.UpdateReservationRequest": {
             "type": "object",
             "properties": {
@@ -3005,9 +3489,25 @@
                 1000000,
                 1000000000,
                 60000000000,
+                3600000000000,
+                -9223372036854775808,
+                9223372036854775807,
+                1,
+                1000,
+                1000000,
+                1000000000,
+                60000000000,
                 3600000000000
             ],
             "x-enum-varnames": [
+                "minDuration",
+                "maxDuration",
+                "Nanosecond",
+                "Microsecond",
+                "Millisecond",
+                "Second",
+                "Minute",
+                "Hour",
                 "minDuration",
                 "maxDuration",
                 "Nanosecond",

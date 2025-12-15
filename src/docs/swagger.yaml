@@ -148,6 +148,8 @@ definitions:
         type: number
       quantity:
         type: number
+      reserved_quantity:
+        type: number
       tag_ids:
         items:
           type: integer
@@ -197,6 +199,8 @@ definitions:
       purchase_price:
         type: number
       quantity:
+        type: number
+      reserved_quantity:
         type: number
       tags:
         items:
@@ -542,6 +546,104 @@ definitions:
       user_id:
         type: integer
     type: object
+  pocketeer_internal_app_services.Template:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      planned_income:
+        type: number
+      planned_work_time:
+        $ref: '#/definitions/time.Duration'
+      updated_at:
+        type: string
+      usage_count:
+        type: integer
+    type: object
+  pocketeer_internal_app_services.TemplateCreateRequest:
+    properties:
+      description:
+        maxLength: 512
+        type: string
+      name:
+        maxLength: 256
+        minLength: 3
+        type: string
+      planned_income:
+        minimum: 0
+        type: number
+      planned_work_time:
+        minimum: 0
+        type: integer
+    required:
+    - name
+    type: object
+  pocketeer_internal_app_services.TemplateFromProjectRequest:
+    properties:
+      name:
+        maxLength: 256
+        minLength: 3
+        type: string
+    required:
+    - name
+    type: object
+  pocketeer_internal_app_services.TemplateFull:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      planned_income:
+        type: number
+      planned_work_time:
+        $ref: '#/definitions/time.Duration'
+      specifications:
+        items:
+          $ref: '#/definitions/pocketeer_internal_app_services.TemplateResourceSpecification'
+        type: array
+      updated_at:
+        type: string
+      usage_count:
+        type: integer
+    type: object
+  pocketeer_internal_app_services.TemplateResourceSpecification:
+    properties:
+      id:
+        type: integer
+      item_type_id:
+        type: integer
+      item_type_name:
+        type: string
+      planned_quantity:
+        type: number
+      template_id:
+        type: integer
+    type: object
+  pocketeer_internal_app_services.TemplateUpdateRequest:
+    properties:
+      description:
+        maxLength: 512
+        type: string
+      name:
+        maxLength: 256
+        minLength: 3
+        type: string
+      planned_income:
+        minimum: 0
+        type: number
+      planned_work_time:
+        minimum: 0
+        type: integer
+    type: object
   pocketeer_internal_app_services.UpdateReservationRequest:
     properties:
       reserved:
@@ -596,9 +698,25 @@ definitions:
     - 1000000000
     - 60000000000
     - 3600000000000
+    - -9223372036854775808
+    - 9223372036854775807
+    - 1
+    - 1000
+    - 1000000
+    - 1000000000
+    - 60000000000
+    - 3600000000000
     format: int64
     type: integer
     x-enum-varnames:
+    - minDuration
+    - maxDuration
+    - Nanosecond
+    - Microsecond
+    - Millisecond
+    - Second
+    - Minute
+    - Hour
     - minDuration
     - maxDuration
     - Nanosecond
@@ -1156,32 +1274,6 @@ paths:
       summary: Upload picture
       tags:
       - pictures
-  /pictures/{hash}:
-    get:
-      description: Serves an image file from the static directory
-      parameters:
-      - description: Image Hash (Filename)
-        in: path
-        name: hash
-        required: true
-        type: string
-      produces:
-      - image/png
-      - ' image/jpeg'
-      - ' image/webp'
-      - ' image/gif'
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: file
-        "404":
-          description: Not Found
-          schema:
-            type: string
-      summary: Get a static picture
-      tags:
-      - pictures
   /pictures/{id}:
     delete:
       consumes:
@@ -1261,6 +1353,32 @@ paths:
       security:
       - BearerAuth: []
       summary: Get picture metadata
+      tags:
+      - pictures
+  /pictures/static/{hash}:
+    get:
+      description: Serves an image file from the static directory
+      parameters:
+      - description: Image Hash (Filename)
+        in: path
+        name: hash
+        required: true
+        type: string
+      produces:
+      - image/png
+      - ' image/jpeg'
+      - ' image/webp'
+      - ' image/gif'
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+        "404":
+          description: Not Found
+          schema:
+            type: string
+      summary: Get a static picture
       tags:
       - pictures
   /projects:
@@ -1878,6 +1996,215 @@ paths:
       summary: Update tag
       tags:
       - tags
+  /templates:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Search query
+        in: query
+        name: query
+        type: string
+      - description: Sort by column (name, usage_count, etc.)
+        in: query
+        name: sort_by
+        type: string
+      - description: Sort order (asc or desc)
+        in: query
+        name: sort_order
+        type: string
+      - description: Page number (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: Items per page (default 20)
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/pocketeer_internal_app_services.Template'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: Search and filter templates
+      tags:
+      - templates
+    post:
+      consumes:
+      - application/json
+      description: Create a new template for future projects
+      parameters:
+      - description: Template Create Request
+        in: body
+        name: template
+        required: true
+        schema:
+          $ref: '#/definitions/pocketeer_internal_app_services.TemplateCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/pocketeer_internal_app_services.Template'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+      security:
+      - BearerAuth: []
+      summary: Create new project template
+      tags:
+      - templates
+  /templates/{id}:
+    delete:
+      parameters:
+      - description: Template ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Delete template
+      tags:
+      - templates
+    get:
+      parameters:
+      - description: Template ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pocketeer_internal_app_services.TemplateFull'
+      security:
+      - BearerAuth: []
+      summary: Get template details
+      tags:
+      - templates
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Template ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Update Request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/pocketeer_internal_app_services.TemplateUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pocketeer_internal_app_services.Template'
+      security:
+      - BearerAuth: []
+      summary: Update template details
+      tags:
+      - templates
+  /templates/{id}/resources:
+    post:
+      parameters:
+      - description: Template ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Resource Spec Request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/pocketeer_internal_app_services.AddPlannedResourceRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pocketeer_internal_app_services.TemplateResourceSpecification'
+      security:
+      - BearerAuth: []
+      summary: Add planned resource to template
+      tags:
+      - templates
+  /templates/{id}/resources/{specId}:
+    delete:
+      parameters:
+      - description: Template ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Specification ID
+        in: path
+        name: specId
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Remove planned resource from template
+      tags:
+      - templates
+  /templates/from-project/{projectId}:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new template by copying plan/actual metrics and resource
+        specs from a project
+      parameters:
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: integer
+      - description: Template Name Request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/pocketeer_internal_app_services.TemplateFromProjectRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/pocketeer_internal_app_services.Template'
+      security:
+      - BearerAuth: []
+      summary: Create template from an existing project
+      tags:
+      - templates
   /user/me:
     delete:
       consumes:

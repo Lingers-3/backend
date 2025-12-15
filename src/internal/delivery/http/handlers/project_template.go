@@ -83,9 +83,7 @@ func (h *TemplateHandler) CreateFromProject(c echo.Context) error {
 		return err
 	}
 
-	var payload struct {
-		Name string `json:"name" validate:"required"`
-	}
+	var payload services.TemplateFromProjectRequest
 	if err := ParseAndValidatePayload(c, &payload); err != nil {
 		return err
 	}
