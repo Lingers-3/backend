@@ -922,8 +922,8 @@ func (s *ProjectService) AddReservation(
 
 		var spec models.ResourceSpecification
 		if err := tx.Joins("Project").
-			Where("resource_specifications.id = ? AND resource_specifications.project_id = ?", specID, projectID).
-			Where("Project.user_id = ?", userID).
+			Where(`"ResourceSpecifications".id = ? AND "ResourceSpecifications".project_id = ?`, specID, projectID).
+			Where(`"Project".user_id = ?`, userID).
 			First(&spec).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return ErrResourceSpecificationNotFound
