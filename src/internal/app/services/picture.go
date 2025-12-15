@@ -83,7 +83,7 @@ func (s *PictureService) Upload(ctx context.Context, auth0ID string, fileHeader 
 	}
 
 	mimeType := detectMimeType(content)
-	if _, ok := allowedMimeTypes[mimeType]; ok {
+	if _, ok := allowedMimeTypes[mimeType]; !ok {
 		return nil, ErrInvalidImageFormat
 	}
 
