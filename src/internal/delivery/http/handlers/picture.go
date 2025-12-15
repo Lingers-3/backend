@@ -31,7 +31,7 @@ func (h *PictureHandler) RegisterRoutes(router *echo.Group, middlewares ...echo.
 // @Param        hash path string true "Image Hash (Filename)"
 // @Success      200        {file}    file
 // @Failure      404        {string}  string  "Not Found"
-// @Router       /pictures/{hash} [get]
+// @Router       /pictures/static/{hash} [get]
 func ServeStaticPictures() {
 	// NOTE(noatu): This function exists solely for Swagger documentation.
 	// The actual serving is handled by e.Static("/pictures", ...) in main.go

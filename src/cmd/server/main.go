@@ -153,6 +153,7 @@ func main() {
 
 	// TODO(noatu): move to config
 	e.Static("/pictures", "/var/pocketeer/img")
+	e.Static("/api/pictures/static", "/var/pocketeer/img")
 	e.GET("/swagger/*", echoSwagger.WrapHandler)
 
 	e.Logger.Fatal(e.Start(fmt.Sprintf("%s:%s", cfg.AppAddress, cfg.AppPort)))
