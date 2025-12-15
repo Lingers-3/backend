@@ -11,6 +11,7 @@ type Item struct {
 
 	Description            *string `gorm:"size:512"`
 	Quantity               float32
+	ReservedQuantity       float32 `gorm:"->;-:migration"` // NOTE(pencelheimer): readonly field, do not automigrate
 	ExpirationDate         *time.Time
 	DisplayMeasurementUnit string `gorm:"size:256"`
 	PurchasePrice          *float32
@@ -25,4 +26,12 @@ type Item struct {
 
 func (Item) TableName() string {
 	return "Items"
+}
+
+func WithReservedQuantity(db *gorm.DB) *gorm.DB {
+	return db.Select(`"Items".*, (
+        SELECT COALESCE(SUM(reserved_quantity), 0)
+        FROM "ResourceReservations"
+        WHERE "ResourceReservations".item_id = "Items".id
+    ) as reserved_quantity`)
 }

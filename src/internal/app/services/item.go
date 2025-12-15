@@ -25,6 +25,7 @@ type Item struct {
 	ID                     uint       `json:"id"`
 	Description            *string    `json:"description"`
 	Quantity               float32    `json:"quantity"`
+	ReservedQuantity       float32    `json:"reserved_quantity"`
 	ExpirationDate         *time.Time `json:"expiration_date"`
 	DisplayMeasurementUnit string     `json:"display_measurement_unit"`
 	PurchasePrice          *float32   `json:"purchase_price"`
@@ -39,6 +40,7 @@ type ItemFull struct {
 	ID                     uint       `json:"id"`
 	Description            *string    `json:"description"`
 	Quantity               float32    `json:"quantity"`
+	ReservedQuantity       float32    `json:"reserved_quantity"`
 	ExpirationDate         *time.Time `json:"expiration_date,omitempty"`
 	DisplayMeasurementUnit string     `json:"display_measurement_unit"`
 	PurchasePrice          *float32   `json:"purchase_price,omitempty"`
@@ -125,6 +127,7 @@ func (s *ItemService) Get(ctx context.Context, auth0ID string, itemID uint) (*It
 
 	var item models.Item
 	err = s.db.WithContext(ctx).
+		Scopes(models.WithReservedQuantity).
 		Unscoped().
 		Preload("Tags", func(db *gorm.DB) *gorm.DB { return db.Select("id") }).
 		Joins(`JOIN "ItemTypes" ON "ItemTypes".id = "Items".item_type_id`).
@@ -150,6 +153,7 @@ func (s *ItemService) GetAll(ctx context.Context, auth0ID string) ([]*Item, erro
 
 	var items []models.Item
 	err = s.db.WithContext(ctx).
+		Scopes(models.WithReservedQuantity).
 		Unscoped().
 		Preload("Tags", func(db *gorm.DB) *gorm.DB { return db.Select("id") }).
 		Joins(`JOIN "ItemTypes" ON "ItemTypes".id = "Items".item_type_id`).
@@ -186,6 +190,7 @@ func (s *ItemService) Update(ctx context.Context, auth0ID string, ID uint, req I
 
 	var item models.Item
 	result := s.db.WithContext(ctx).
+		Scopes(models.WithReservedQuantity).
 		Preload("Tags").
 		Joins(`JOIN "ItemTypes" ON "ItemTypes".id = "Items".item_type_id`).
 		Where(`"ItemTypes".user_id = ? AND "Items".id = ?`, userID, ID).
@@ -298,6 +303,7 @@ func (s *ItemService) GetAllFull(ctx context.Context, auth0ID string, itemTypeID
 	var items []models.Item
 
 	query := s.db.WithContext(ctx).
+		Scopes(models.WithReservedQuantity).
 		Unscoped().
 		Preload("Tags").
 		Joins("JOIN item_types ON item_types.id = items.item_type_id").
