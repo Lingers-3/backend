@@ -87,6 +87,7 @@ func main() {
 	tagService := services.NewTagService(db, userService)
 	pictureService := services.NewPictureService(db, userService)
 	projectService := services.NewProjectService(db, userService, itemService)
+	templateService := services.NewTemplateService(db, userService, projectService)
 
 	userHandler := handlers.NewUserHandler(userService, cfg)
 	itemTypeHandler := handlers.NewItemTypeHandler(itemTypeService)
@@ -94,6 +95,7 @@ func main() {
 	tagHandler := handlers.NewTagHandler(tagService)
 	pictureHandler := handlers.NewPictureHandler(pictureService)
 	projectHandler := handlers.NewProjectHandler(projectService)
+	templateHandler := handlers.NewTemplateHandler(templateService)
 
 	e := echo.New()
 
@@ -147,6 +149,7 @@ func main() {
 	pictureHandler.RegisterRoutes(api, authMiddleware)
 	userHandler.RegisterRoutes(api, authMiddleware)
 	projectHandler.RegisterRoutes(api, authMiddleware)
+	templateHandler.RegisterRoutes(api, authMiddleware)
 
 	// TODO(noatu): move to config
 	e.Static("/pictures", "/var/pocketeer/img")
