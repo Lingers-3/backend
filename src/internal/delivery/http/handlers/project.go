@@ -205,7 +205,7 @@ func (h *ProjectHandler) Delete(c echo.Context) error {
 // @Param        id    path      int                                true  "Project ID"
 // @Param        body  body      services.ProjectPlanUpdateRequest  true  "Plan Update Request"
 // @Success      200   {object}  services.Project
-// @Router       /projects/{id}/plan [put]
+// @Router       /projects/{id}/plan [patch]
 // @Security     BearerAuth
 func (h *ProjectHandler) UpdatePlan(c echo.Context) error {
 	id, err := GetIDParam(c)

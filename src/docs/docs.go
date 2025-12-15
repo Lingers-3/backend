@@ -816,7 +816,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/pocketeer_internal_app_services.PictureInfo"
+                            "$ref": "#/definitions/pocketeer_internal_app_services.Picture"
                         }
                     },
                     "400": {
@@ -852,6 +852,44 @@ const docTemplate = `{
                 }
             }
         },
+        "/pictures/{hash}": {
+            "get": {
+                "description": "Serves an image file from the static directory",
+                "produces": [
+                    "image/png",
+                    " image/jpeg",
+                    " image/webp",
+                    " image/gif"
+                ],
+                "tags": [
+                    "pictures"
+                ],
+                "summary": "Get a static picture",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Image Hash (Filename)",
+                        "name": "hash",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/pictures/{id}": {
             "get": {
                 "security": [
@@ -859,17 +897,17 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Download the actual image file content",
+                "description": "Retrieve metadata information about a picture without downloading the file",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
-                    "image/jpeg",
-                    "image/png",
-                    "image/webp",
-                    "image/gif"
+                    "application/json"
                 ],
                 "tags": [
                     "pictures"
                 ],
-                "summary": "Get picture file",
+                "summary": "Get picture metadata",
                 "parameters": [
                     {
                         "type": "integer",
@@ -881,9 +919,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Image file",
+                        "description": "OK",
                         "schema": {
-                            "type": "file"
+                            "$ref": "#/definitions/pocketeer_internal_app_services.Picture"
                         }
                     },
                     "400": {
@@ -962,67 +1000,6 @@ const docTemplate = `{
                     },
                     "409": {
                         "description": "Picture is still in use",
-                        "schema": {
-                            "$ref": "#/definitions/echo.HTTPError"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/echo.HTTPError"
-                        }
-                    }
-                }
-            }
-        },
-        "/pictures/{id}/info": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Retrieve metadata information about a picture without downloading the file",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "pictures"
-                ],
-                "summary": "Get picture metadata",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Picture ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/pocketeer_internal_app_services.PictureInfo"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/echo.HTTPError"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/echo.HTTPError"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/echo.HTTPError"
                         }
@@ -1353,7 +1330,7 @@ const docTemplate = `{
             }
         },
         "/projects/{id}/plan": {
-            "put": {
+            "patch": {
                 "security": [
                     {
                         "BearerAuth": []
@@ -2495,6 +2472,9 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
+                "picture_hash": {
+                    "type": "string"
+                },
                 "picture_id": {
                     "type": "integer"
                 },
@@ -2587,6 +2567,9 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
+                "picture_hash": {
+                    "type": "string"
+                },
                 "picture_id": {
                     "type": "integer"
                 },
@@ -2636,9 +2619,12 @@ const docTemplate = `{
                 }
             }
         },
-        "pocketeer_internal_app_services.PictureInfo": {
+        "pocketeer_internal_app_services.Picture": {
             "type": "object",
             "properties": {
+                "hash": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "integer"
                 },
