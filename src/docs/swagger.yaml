@@ -310,6 +310,41 @@ definitions:
       updated_at:
         type: string
     type: object
+  pocketeer_internal_app_services.ItemTypeUpdateRequest:
+    properties:
+      base_measurement_unit:
+        maxLength: 256
+        type: string
+      default_quantity:
+        maximum: 1000000
+        minimum: 0
+        type: number
+      description:
+        maxLength: 512
+        type: string
+      display_measurement_unit:
+        maxLength: 256
+        type: string
+      name:
+        maxLength: 256
+        type: string
+      picture_id:
+        type: integer
+      remove_picture:
+        description: true = remove picture
+        type: boolean
+      restore:
+        description: true = restore soft-deleted item
+        type: boolean
+      shortage_threshold:
+        maximum: 1000000
+        minimum: 0
+        type: number
+      tag_ids:
+        items:
+          type: integer
+        type: array
+    type: object
   pocketeer_internal_app_services.ItemUpdateRequest:
     properties:
       description:
@@ -715,6 +750,8 @@ definitions:
     - 1000000000
     - 60000000000
     - 3600000000000
+    - -9223372036854775808
+    - 9223372036854775807
     - 1
     - 1000
     - 1000000
@@ -732,6 +769,8 @@ definitions:
     - Second
     - Minute
     - Hour
+    - minDuration
+    - maxDuration
     - Nanosecond
     - Microsecond
     - Millisecond
@@ -876,32 +915,6 @@ paths:
       summary: List all item types
       tags:
       - item-types
-    patch:
-      consumes:
-      - application/json
-      description: Get a list of all item types belonging to the authenticated user
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/pocketeer_internal_app_services.ItemType'
-            type: array
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/echo.HTTPError'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/echo.HTTPError'
-      security:
-      - BearerAuth: []
-      summary: List all item types
-      tags:
-      - item-types
     post:
       consumes:
       - application/json
@@ -1016,6 +1029,51 @@ paths:
       security:
       - BearerAuth: []
       summary: Get item type by ID
+      tags:
+      - item-types
+    patch:
+      consumes:
+      - application/json
+      description: Update an existing item type belonging to the authenticated user.
+        Set remove_picture to true to remove the picture.
+      parameters:
+      - description: Item Type ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Item type update payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/pocketeer_internal_app_services.ItemTypeUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pocketeer_internal_app_services.ItemType'
+        "400":
+          description: Invalid request payload
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "404":
+          description: Item type or picture not found
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+      security:
+      - BearerAuth: []
+      summary: Update an item type
       tags:
       - item-types
   /item-types/full:

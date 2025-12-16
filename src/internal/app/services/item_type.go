@@ -187,6 +187,7 @@ type ItemTypeUpdateRequest struct {
 	DefaultQuantity        *float32 `json:"default_quantity" validate:"omitempty,gte=0,lte=1000000"`
 	ShortageThreshold      *float32 `json:"shortage_threshold" validate:"omitempty,gte=0,lte=1000000"`
 	PictureID              *uint    `json:"picture_id" validate:"omitempty,gt=0"`
+	RemovePicture          *bool    `json:"remove_picture"` // true = remove picture
 	TagIDs                 *[]uint  `json:"tag_ids" validate:"omitempty,dive,gt=0"`
 	Restore                *bool    `json:"restore"` // true = restore soft-deleted item
 }
@@ -232,7 +233,22 @@ func (s *ItemTypeService) Update(ctx context.Context, auth0ID string, itemTypeID
 		updates["shortage_threshold"] = *req.ShortageThreshold
 	}
 	if req.PictureID != nil {
+		// Verify picture exists and belongs to user
+		var picture models.Picture
+		err := s.db.WithContext(ctx).
+			Where("id = ? AND user_id = ?", *req.PictureID, userID).
+			First(&picture).Error
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil, ErrPictureNotFound
+			}
+			log.Printf("ERROR: fetching picture: %v", err)
+			return nil, ErrDatabaseError
+		}
 		updates["picture_id"] = *req.PictureID
+	}
+	if req.RemovePicture != nil && *req.RemovePicture {
+		updates["picture_id"] = nil
 	}
 	if req.Restore != nil && *req.Restore {
 		updates["deleted_at"] = nil

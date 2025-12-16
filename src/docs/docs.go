@@ -265,47 +265,6 @@ const docTemplate = `{
                         }
                     }
                 }
-            },
-            "patch": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Get a list of all item types belonging to the authenticated user",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "item-types"
-                ],
-                "summary": "List all item types",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/pocketeer_internal_app_services.ItemType"
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/echo.HTTPError"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/echo.HTTPError"
-                        }
-                    }
-                }
             }
         },
         "/item-types/full": {
@@ -470,6 +429,74 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/echo.HTTPError"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update an existing item type belonging to the authenticated user. Set remove_picture to true to remove the picture.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "item-types"
+                ],
+                "summary": "Update an item type",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Item Type ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Item type update payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocketeer_internal_app_services.ItemTypeUpdateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/pocketeer_internal_app_services.ItemType"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request payload",
+                        "schema": {
+                            "$ref": "#/definitions/echo.HTTPError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/echo.HTTPError"
+                        }
+                    },
+                    "404": {
+                        "description": "Item type or picture not found",
+                        "schema": {
+                            "$ref": "#/definitions/echo.HTTPError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
                         "schema": {
                             "$ref": "#/definitions/echo.HTTPError"
                         }
@@ -3025,6 +3052,54 @@ const docTemplate = `{
                 }
             }
         },
+        "pocketeer_internal_app_services.ItemTypeUpdateRequest": {
+            "type": "object",
+            "properties": {
+                "base_measurement_unit": {
+                    "type": "string",
+                    "maxLength": 256
+                },
+                "default_quantity": {
+                    "type": "number",
+                    "maximum": 1000000,
+                    "minimum": 0
+                },
+                "description": {
+                    "type": "string",
+                    "maxLength": 512
+                },
+                "display_measurement_unit": {
+                    "type": "string",
+                    "maxLength": 256
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 256
+                },
+                "picture_id": {
+                    "type": "integer"
+                },
+                "remove_picture": {
+                    "description": "true = remove picture",
+                    "type": "boolean"
+                },
+                "restore": {
+                    "description": "true = restore soft-deleted item",
+                    "type": "boolean"
+                },
+                "shortage_threshold": {
+                    "type": "number",
+                    "maximum": 1000000,
+                    "minimum": 0
+                },
+                "tag_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
         "pocketeer_internal_app_services.ItemUpdateRequest": {
             "type": "object",
             "properties": {
@@ -3618,6 +3693,8 @@ const docTemplate = `{
                 1000000000,
                 60000000000,
                 3600000000000,
+                -9223372036854775808,
+                9223372036854775807,
                 1,
                 1000,
                 1000000,
@@ -3634,6 +3711,8 @@ const docTemplate = `{
                 "Second",
                 "Minute",
                 "Hour",
+                "minDuration",
+                "maxDuration",
                 "Nanosecond",
                 "Microsecond",
                 "Millisecond",

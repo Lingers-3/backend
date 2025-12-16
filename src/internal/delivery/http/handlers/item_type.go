@@ -118,16 +118,20 @@ func (h *ItemTypeHandler) GetAll(c echo.Context) error {
 	return c.JSON(http.StatusOK, result)
 }
 
-// GetAll retrieves all item types for the authenticated user
-// @Summary      List all item types
-// @Description  Get a list of all item types belonging to the authenticated user
+// Update updates an existing item type for the authenticated user
+// @Summary      Update an item type
+// @Description  Update an existing item type belonging to the authenticated user. Set remove_picture to true to remove the picture.
 // @Tags         item-types
 // @Accept       json
 // @Produce      json
-// @Success      200  {array}   services.ItemType
-// @Failure      401  {object}  echo.HTTPError
-// @Failure      500  {object}  echo.HTTPError
-// @Router       /item-types [patch]
+// @Param        id    path      int                            true  "Item Type ID"
+// @Param        body  body      services.ItemTypeUpdateRequest true  "Item type update payload"
+// @Success      200   {object}  services.ItemType
+// @Failure      400   {object}  echo.HTTPError  "Invalid request payload"
+// @Failure      401   {object}  echo.HTTPError  "Unauthorized"
+// @Failure      404   {object}  echo.HTTPError  "Item type or picture not found"
+// @Failure      500   {object}  echo.HTTPError  "Internal server error"
+// @Router       /item-types/{id} [patch]
 // @Security     BearerAuth
 func (h *ItemTypeHandler) Update(c echo.Context) error {
 	ID, err := GetIDParam(c)
