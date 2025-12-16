@@ -9,6 +9,7 @@ import (
 	"pocketeer/internal/platform/database"
 	"pocketeer/internal/platform/database/models"
 
+	"github.com/oapi-codegen/nullable"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -180,16 +181,15 @@ func (s *ItemTypeService) GetAll(ctx context.Context, auth0ID string) ([]*ItemTy
 }
 
 type ItemTypeUpdateRequest struct {
-	Name                   *string  `json:"name" validate:"omitempty,max=256"`
-	Description            *string  `json:"description" validate:"omitempty,max=512"`
-	BaseMeasurementUnit    *string  `json:"base_measurement_unit" validate:"omitempty,max=256"`
-	DisplayMeasurementUnit *string  `json:"display_measurement_unit" validate:"omitempty,max=256"`
-	DefaultQuantity        *float32 `json:"default_quantity" validate:"omitempty,gte=0,lte=1000000"`
-	ShortageThreshold      *float32 `json:"shortage_threshold" validate:"omitempty,gte=0,lte=1000000"`
-	PictureID              *uint    `json:"picture_id" validate:"omitempty,gt=0"`
-	RemovePicture          *bool    `json:"remove_picture"` // true = remove picture
-	TagIDs                 *[]uint  `json:"tag_ids" validate:"omitempty,dive,gt=0"`
-	Restore                *bool    `json:"restore"` // true = restore soft-deleted item
+	Name                   *string                 `json:"name" validate:"omitempty,max=256"`
+	Description            *string                 `json:"description" validate:"omitempty,max=512"`
+	BaseMeasurementUnit    *string                 `json:"base_measurement_unit" validate:"omitempty,max=256"`
+	DisplayMeasurementUnit *string                 `json:"display_measurement_unit" validate:"omitempty,max=256"`
+	DefaultQuantity        *float32                `json:"default_quantity" validate:"omitempty,gte=0,lte=1000000"`
+	ShortageThreshold      *float32                `json:"shortage_threshold" validate:"omitempty,gte=0,lte=1000000"`
+	PictureID              nullable.Nullable[uint] `json:"picture_id"`
+	TagIDs                 *[]uint                 `json:"tag_ids" validate:"omitempty,dive,gt=0"`
+	Restore                *bool                   `json:"restore"` // true = restore soft-deleted item
 }
 
 func (s *ItemTypeService) Update(ctx context.Context, auth0ID string, itemTypeID uint, req ItemTypeUpdateRequest) (*ItemType, error) {
@@ -232,23 +232,26 @@ func (s *ItemTypeService) Update(ctx context.Context, auth0ID string, itemTypeID
 	if req.ShortageThreshold != nil {
 		updates["shortage_threshold"] = *req.ShortageThreshold
 	}
-	if req.PictureID != nil {
-		// Verify picture exists and belongs to user
-		var picture models.Picture
-		err := s.db.WithContext(ctx).
-			Where("id = ? AND user_id = ?", *req.PictureID, userID).
-			First(&picture).Error
-		if err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return nil, ErrPictureNotFound
+	// Can be set to a value or explicitly set to null
+	if req.PictureID.IsSpecified() {
+		if req.PictureID.IsNull() {
+			updates["picture_id"] = nil // remove the picture
+		} else {
+			// Verify picture exists and belongs to user
+			pictureID := req.PictureID.MustGet()
+			var picture models.Picture
+			err := s.db.WithContext(ctx).
+				Where("id = ? AND user_id = ?", pictureID, userID).
+				First(&picture).Error
+			if err != nil {
+				if errors.Is(err, gorm.ErrRecordNotFound) {
+					return nil, ErrPictureNotFound
+				}
+				log.Printf("ERROR: fetching picture: %v", err)
+				return nil, ErrDatabaseError
 			}
-			log.Printf("ERROR: fetching picture: %v", err)
-			return nil, ErrDatabaseError
+			updates["picture_id"] = pictureID
 		}
-		updates["picture_id"] = *req.PictureID
-	}
-	if req.RemovePicture != nil && *req.RemovePicture {
-		updates["picture_id"] = nil
 	}
 	if req.Restore != nil && *req.Restore {
 		updates["deleted_at"] = nil

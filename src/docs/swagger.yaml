@@ -35,6 +35,10 @@ definitions:
     properties:
       message: {}
     type: object
+  nullable.Nullable-uint:
+    additionalProperties:
+      type: integer
+    type: object
   pocketeer_internal_app_services.ActiveResourceItemRequest:
     properties:
       item_id:
@@ -329,10 +333,7 @@ definitions:
         maxLength: 256
         type: string
       picture_id:
-        type: integer
-      remove_picture:
-        description: true = remove picture
-        type: boolean
+        $ref: '#/definitions/nullable.Nullable-uint'
       restore:
         description: true = restore soft-deleted item
         type: boolean
@@ -750,14 +751,10 @@ definitions:
     - 1000000000
     - 60000000000
     - 3600000000000
-    - -9223372036854775808
-    - 9223372036854775807
     - 1
     - 1000
     - 1000000
     - 1000000000
-    - 60000000000
-    - 3600000000000
     format: int64
     type: integer
     x-enum-varnames:
@@ -769,14 +766,10 @@ definitions:
     - Second
     - Minute
     - Hour
-    - minDuration
-    - maxDuration
     - Nanosecond
     - Microsecond
     - Millisecond
     - Second
-    - Minute
-    - Hour
 externalDocs:
   description: OpenAPI Specification
   url: https://swagger.io/resources/open-api/
@@ -1035,7 +1028,7 @@ paths:
       consumes:
       - application/json
       description: Update an existing item type belonging to the authenticated user.
-        Set remove_picture to true to remove the picture.
+        Set picture_id to null to remove the picture.
       parameters:
       - description: Item Type ID
         in: path

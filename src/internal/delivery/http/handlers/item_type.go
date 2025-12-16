@@ -120,7 +120,7 @@ func (h *ItemTypeHandler) GetAll(c echo.Context) error {
 
 // Update updates an existing item type for the authenticated user
 // @Summary      Update an item type
-// @Description  Update an existing item type belonging to the authenticated user. Set remove_picture to true to remove the picture.
+// @Description  Update an existing item type belonging to the authenticated user. Set picture_id to null to remove the picture.
 // @Tags         item-types
 // @Accept       json
 // @Produce      json
