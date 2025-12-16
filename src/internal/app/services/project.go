@@ -109,6 +109,91 @@ func (s *ProjectService) Create(ctx context.Context, auth0ID string, req Project
 	return ProjectFromModel(&project), nil
 }
 
+type ProjectCreateFromTemplateRequest struct {
+	TemplateID      uint       `json:"template_id" validate:"required,gt=0"`
+	Name            string     `json:"name" validate:"required,min=1,max=256"`
+	Description     *string    `json:"description" validate:"omitempty,max=512"`
+	PlannedDeadline *time.Time `json:"planned_deadline" validate:"omitempty,gt=now"`
+}
+
+func (s *ProjectService) CreateFromTemplate(
+	ctx context.Context,
+	auth0ID string,
+	req ProjectCreateFromTemplateRequest,
+) (*ProjectFull, error) {
+	userID, err := s.userService.GetUserIDByAuth0ID(ctx, auth0ID)
+	if err != nil {
+		return nil, err
+	}
+
+	var template models.ProjectTemplate
+	err = s.db.WithContext(ctx).
+		Preload("ResourceSpecifications").
+		Where("id = ?", req.TemplateID).
+		First(&template).Error
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrTemplateNotFound
+		}
+		return nil, ErrDatabaseError
+	}
+
+	project := models.Project{
+		UserID:      userID,
+		Name:        req.Name,
+		Description: req.Description,
+		State:       models.ProjectStatePlanning,
+
+		PlannedIncome:   template.PlannedIncome,
+		PlannedWorkTime: template.PlannedWorkTime,
+		PlannedDeadline: req.PlannedDeadline,
+	}
+
+	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+
+		if err := tx.Create(&project).Error; err != nil {
+			return err
+		}
+
+		var resourceSpecs []models.ResourceSpecification
+		for _, trs := range template.ResourceSpecifications {
+			spec := models.ResourceSpecification{
+				ProjectID:       project.ID,
+				ItemTypeID:      trs.ItemTypeID,
+				ResourceType:    trs.ResourceType,
+				PlannedQuantity: trs.PlannedQuantity,
+			}
+			resourceSpecs = append(resourceSpecs, spec)
+		}
+
+		if len(resourceSpecs) > 0 {
+			if err := tx.Create(&resourceSpecs).Error; err != nil {
+				return err
+			}
+		}
+
+		if err := tx.Model(&models.ProjectTemplate{}).
+			Where("id = ?", template.ID).
+			UpdateColumn("usage_count", gorm.Expr("usage_count + ?", 1)).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	fullProject, err := s.Get(ctx, auth0ID, project.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return fullProject, nil
+}
+
 type ProjectUpdateRequest struct {
 	Name        *string `json:"name" validate:"omitempty,min=1,max=256"`
 	Description *string `json:"description" validate:"omitempty,max=512"`

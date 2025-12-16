@@ -20,6 +20,7 @@ func (h *ProjectHandler) RegisterRoutes(router *echo.Group, middlewares ...echo.
 	group := router.Group("/projects", middlewares...)
 
 	group.POST("", h.Create)
+	group.POST("/from-template", h.CreateFromTemplate)
 	group.PATCH("/:id", h.Update)
 	group.GET("", h.GetAll)
 	group.GET("/:id", h.Get)
@@ -71,6 +72,38 @@ func (h *ProjectHandler) Create(c echo.Context) error {
 	}
 
 	result, err := h.service.Create(c.Request().Context(), auth0ID, payload)
+	if err != nil {
+		return ServiceErrToHttp(err)
+	}
+
+	return c.JSON(http.StatusCreated, result)
+}
+
+// CreateFromTemplate
+// @Summary      Create new project from template
+// @Description  Create a new project in 'Planning' state, copying planned metrics and resources from a template
+// @Tags         projects
+// @Accept       json
+// @Produce      json
+// @Param        template  body      services.ProjectCreateFromTemplateRequest  true  "Project Create from Template Request"
+// @Success      201       {object}  services.ProjectFull
+// @Failure      400       {object}  echo.HTTPError
+// @Failure      401       {object}  echo.HTTPError
+// @Failure      500       {object}  echo.HTTPError
+// @Router       /projects/from-template [post]
+// @Security     BearerAuth
+func (h *ProjectHandler) CreateFromTemplate(c echo.Context) error {
+	var payload services.ProjectCreateFromTemplateRequest
+	if err := ParseAndValidatePayload(c, &payload); err != nil {
+		return err
+	}
+
+	auth0ID, err := GetAuth0ID(c)
+	if err != nil {
+		return err
+	}
+
+	result, err := h.service.CreateFromTemplate(c.Request().Context(), auth0ID, payload)
 	if err != nil {
 		return ServiceErrToHttp(err)
 	}
