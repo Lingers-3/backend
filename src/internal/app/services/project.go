@@ -687,10 +687,6 @@ func (s *ProjectService) Cancel(ctx context.Context, auth0ID string, projectID u
 					return ErrDatabaseError
 				}
 			}
-
-			if err := tx.Delete(&reservation).Error; err != nil {
-				return ErrDatabaseError
-			}
 		}
 
 		now := time.Now()
@@ -753,10 +749,6 @@ func (s *ProjectService) Complete(ctx context.Context, auth0ID string, projectID
 				if err := tx.Save(&item).Error; err != nil {
 					return ErrDatabaseError
 				}
-			}
-
-			if err := tx.Delete(&reservation).Error; err != nil {
-				return ErrDatabaseError
 			}
 		}
 
