@@ -127,7 +127,7 @@ func (h *ItemTypeHandler) GetAll(c echo.Context) error {
 // @Success      200  {array}   services.ItemType
 // @Failure      401  {object}  echo.HTTPError
 // @Failure      500  {object}  echo.HTTPError
-// @Router       /item-types [get]
+// @Router       /item-types [patch]
 // @Security     BearerAuth
 func (h *ItemTypeHandler) Update(c echo.Context) error {
 	ID, err := GetIDParam(c)
