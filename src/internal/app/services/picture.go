@@ -131,6 +131,14 @@ func (s *PictureService) Upload(ctx context.Context, auth0ID string, fileHeader 
 	}
 
 	if err := s.db.WithContext(ctx).Create(&picture).Error; err != nil {
+		// Race condition: another concurrent request created the same user_id+hash record
+		if errors.Is(err, gorm.ErrDuplicatedKey) {
+			if err := s.db.WithContext(ctx).
+				Where("hash = ? AND user_id = ?", hashStr, userID).
+				First(&picture).Error; err == nil {
+				return pictureFromModel(&picture), nil
+			}
+		}
 		log.Printf("ERROR: creating picture record: %v", err)
 		return nil, ErrDatabaseError
 	}
